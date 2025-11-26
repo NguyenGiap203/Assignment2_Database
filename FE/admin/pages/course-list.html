@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Khóa học</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/navbar.css">
+</head>
+<body>
+  <div id="navbar"></div>
+
+  <div class="container">
+    <h2>Khóa học</h2>
+
+    <div class="topbar">
+      <input id="c_search" placeholder="Tìm theo tên / mô tả" oninput="renderCourses()">
+      <select id="c_status" onchange="renderCourses()">
+        <option value="">Tất cả trạng thái</option>
+        <option value="active">Active</option>
+        <option value="close">Close</option>
+      </select>
+      <select id="c_sort" onchange="renderCourses()">
+        <option value="">Sắp xếp</option>
+        <option value="duration">Thời lượng ↑</option>
+        <option value="rating">Đánh giá ↓</option>
+        <option value="participants">Người học ↓</option>
+      </select>
+    </div>
+
+    <table class="table">
+      <thead><tr><th>ID</th><th>Tiêu đề</th><th>Trạng thái</th><th>Thời lượng</th><th>Bài tập</th><th>Video</th><th>Người tham gia</th><th>Điểm TB</th><th>Hành động</th></tr></thead>
+      <tbody id="c_tbody"></tbody>
+    </table>
+  </div>
+
+  <script src="../js/db.js"></script>
+  <script src="../js/navbar.js"></script>
+  <script src="../js/course.js"></script>
+</body>
+</html>

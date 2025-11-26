@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Chỉnh sửa Bài chia sẻ</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/navbar.css">
+</head>
+<body>
+  <div id="navbar"></div>
+
+  <div class="container">
+    <h2>Chỉnh sửa Bài chia sẻ</h2>
+
+    <div class="form-grid">
+      <div><label>ID</label><input id="pf_id" readonly></div>
+      <div class="form-full"><label>Tiêu đề</label><input id="pf_title" readonly></div>
+      <div class="form-full"><label>Nội dung</label><textarea id="pf_content" rows="5" readonly></textarea></div>
+      <div><label>Trạng thái</label>
+        <select id="pf_status">
+          <option value="active">active</option>
+          <option value="locked">locked</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;">
+      <button onclick="savePost()">Lưu</button>
+      <button class="secondary" onclick="location.href='post-list.html'">Hủy</button>
+    </div>
+  </div>
+
+<script src="../js/db.js"></script>
+<script src="../js/navbar.js"></script>
+<script src="../js/post-form.js"></script>
+</body>
+</html>
