@@ -1,0 +1,44 @@
+# .NET Build outputs - KHÔNG commit
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# VS Code
+.vscode/
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Bb]uild/
+bld/
+[Bb]in/
+[Oo]bj/
+
+# Visual Studio cache/options
+.vs/
+*.rsuser
+
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Files built by Visual Studio
+*.dll
+*.exe
+*.pdb
+*.cache
+*.log
+
+# Node modules (cho FE nếu có)
+node_modules/
+package-lock.json
+
+# OS files
+.DS_Store
+Thumbs.db
