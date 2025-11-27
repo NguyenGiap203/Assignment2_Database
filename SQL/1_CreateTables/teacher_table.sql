@@ -1,0 +1,3 @@
+CREATE TABLE TEACHER (
+    TeacherID  CHAR(10)    PRIMARY KEY
+);
