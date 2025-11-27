@@ -1,0 +1,16 @@
+# Bỏ qua thư mục cài đặt package
+node_modules/
+.pnpm-store/
+
+# Bỏ qua các file và thư mục do build tool tạo ra
+/dist
+/build
+/.vite
+/coverage
+
+# Bỏ qua các file cấu hình cục bộ hoặc log
+.env
+.env.local
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*

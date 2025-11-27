@@ -1,0 +1,14 @@
+/* src/index.css */
+
+/* Chỉ thị @tailwind là BẮT BUỘC */
+@tailwind base; 
+@tailwind components; 
+@tailwind utilities;
+
+/* KHÔNG có lệnh import nào trỏ đến đường dẫn JavaScript, ví dụ:
+   @import "tailwindcss/lib/index.js"; <--- ĐÂY LÀ NGUYÊN NHÂN GÂY LỖI
+*/
+
+body {
+    font-family: 'Inter', sans-serif;
+}

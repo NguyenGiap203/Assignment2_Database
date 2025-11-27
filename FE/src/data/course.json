@@ -1,0 +1,38 @@
+[
+  {
+    "CourseID": "COU00001",
+    "CourseName": "Lập trình React cơ bản",
+    "CourseState": "Đang mở",
+    "TeacherID": "USR00002",
+    "TeacherName": "Lê Thị B (Giảng viên)",
+    "TotalDuration": 15.5,
+    "NumStudents": 150,
+    "AverageRating": 4.5,
+    "NumExercises": 10,
+    "NumTests": 3
+  },
+  {
+    "CourseID": "COU00002",
+    "CourseName": "Cơ sở dữ liệu SQL Server",
+    "CourseState": "Sắp ra mắt",
+    "TeacherID": "USR00001",
+    "TeacherName": "Nguyễn Văn A (Admin)",
+    "TotalDuration": 10.0,
+    "NumStudents": 0,
+    "AverageRating": 0.0,
+    "NumExercises": 5,
+    "NumTests": 2
+  },
+  {
+    "CourseID": "COU00003",
+    "CourseName": "Thiết kế Web với Tailwind",
+    "CourseState": "Đã đóng",
+    "TeacherID": "USR00002",
+    "TeacherName": "Lê Thị B (Giảng viên)",
+    "TotalDuration": 8.75,
+    "NumStudents": 80,
+    "AverageRating": 4.7,
+    "NumExercises": 7,
+    "NumTests": 1
+  }
+]

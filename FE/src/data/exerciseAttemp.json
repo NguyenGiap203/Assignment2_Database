@@ -1,0 +1,38 @@
+[
+  {
+    "AttemptID": "ATT00001",
+    "UserID": "USR00003",
+    "UserName": "Phạm Minh C (Học viên)",
+    "ExerciseID": "EXE00001",
+    "ExerciseTitle": "Thực hành Component State",
+    "CourseName": "Lập trình React cơ bản",
+    "StartTime": "2024-03-15T10:00:00Z",
+    "SubmitTime": "2024-03-15T10:45:30Z",
+    "Score": 85.5,
+    "Status": "Passed"
+  },
+  {
+    "AttemptID": "ATT00002",
+    "UserID": "USR00003",
+    "UserName": "Phạm Minh C (Học viên)",
+    "ExerciseID": "EXE00002",
+    "ExerciseTitle": "Xây dựng Router cơ bản",
+    "CourseName": "Lập trình React cơ bản",
+    "StartTime": "2024-03-20T14:00:00Z",
+    "SubmitTime": "2024-03-20T14:35:00Z",
+    "Score": 65.0,
+    "Status": "Failed"
+  },
+  {
+    "AttemptID": "ATT00003",
+    "UserID": "USR00004",
+    "UserName": "Trần Thanh D (Bị cấm)",
+    "ExerciseID": "EXE00001",
+    "ExerciseTitle": "Thực hành Component State",
+    "CourseName": "Lập trình React cơ bản",
+    "StartTime": "2024-04-05T08:00:00Z",
+    "SubmitTime": null,
+    "Score": null,
+    "Status": "In Progress"
+  }
+]

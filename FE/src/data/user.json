@@ -1,0 +1,42 @@
+[
+  {
+    "UserID": "USR00001",
+    "AccountName": "admin_main",
+    "FullName": "Nguyễn Văn A (Admin)",
+    "Email": "admin.a@lms.com",
+    "PhoneNumber": "0901112233",
+    "Role": "Admin",
+    "AccountState": true,
+    "EnrollmentDate": "2024-01-15T00:00:00Z"
+  },
+  {
+    "UserID": "USR00002",
+    "AccountName": "teacher_dev",
+    "FullName": "Lê Thị B (Giảng viên)",
+    "Email": "teacher.b@lms.com",
+    "PhoneNumber": "0904445566",
+    "Role": "Teacher",
+    "AccountState": true,
+    "EnrollmentDate": "2024-02-01T00:00:00Z"
+  },
+  {
+    "UserID": "USR00003",
+    "AccountName": "student_pro",
+    "FullName": "Phạm Minh C (Học viên)",
+    "Email": "student.c@lms.com",
+    "PhoneNumber": "0907778899",
+    "Role": "Student",
+    "AccountState": true,
+    "EnrollmentDate": "2024-03-10T00:00:00Z"
+  },
+  {
+    "UserID": "USR00004",
+    "AccountName": "user_banned",
+    "FullName": "Trần Thanh D (Bị cấm)",
+    "Email": "user.d@lms.com",
+    "PhoneNumber": "0900001111",
+    "Role": "Student",
+    "AccountState": false,
+    "EnrollmentDate": "2024-04-05T00:00:00Z"
+  }
+]

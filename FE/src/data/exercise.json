@@ -1,0 +1,35 @@
+[
+  {
+    "ExerciseID": "EXE00001",
+    "Title": "Thực hành Component State",
+    "ChapterID": "CHA00001",
+    "ChapterTitle": "Chương 1: Giới thiệu React",
+    "CourseID": "COU00001",
+    "CourseName": "Lập trình React cơ bản",
+    "MinPassingScore": 70,
+    "TotalAttempts": 125,
+    "DateCreated": "2024-02-20T09:00:00Z"
+  },
+  {
+    "ExerciseID": "EXE00002",
+    "Title": "Xây dựng Router cơ bản",
+    "ChapterID": "CHA00002",
+    "ChapterTitle": "Chương 2: Routing và Navigation",
+    "CourseID": "COU00001",
+    "CourseName": "Lập trình React cơ bản",
+    "MinPassingScore": 80,
+    "TotalAttempts": 100,
+    "DateCreated": "2024-03-01T10:30:00Z"
+  },
+  {
+    "ExerciseID": "EXE00003",
+    "Title": "Thiết kế Schema cơ bản",
+    "ChapterID": "CHA00010",
+    "ChapterTitle": "Chương 1: Mô hình hóa dữ liệu",
+    "CourseID": "COU00002",
+    "CourseName": "Cơ sở dữ liệu SQL Server",
+    "MinPassingScore": 60,
+    "TotalAttempts": 0,
+    "DateCreated": "2024-05-01T12:00:00Z"
+  }
+]
