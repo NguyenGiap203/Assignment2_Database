@@ -1,0 +1,4 @@
+ALTER TABLE QUESTION
+ADD CONSTRAINT FK_QUESTION_TEST 
+FOREIGN KEY (TestID) REFERENCES TEST (TestID)
+ON DELETE CASCADE; -- Tùy chọn: Xóa bài kiểm tra thì xóa luôn các câu hỏi bên trong
