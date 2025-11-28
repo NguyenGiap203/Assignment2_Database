@@ -17,3 +17,6 @@ CREATE TABLE TEST_ATTEMPT_RECORDS (
     -- Ràng buộc logic: Ngày nộp phải sau ngày bắt đầu
     CONSTRAINT CK_TestAttempt_Time CHECK (SubmitTime >= StartTime)
 );
+
+ALTER TABLE TEST_ATTEMPT_RECORDS
+ALTER COLUMN Score DECIMAL(5, 2);
