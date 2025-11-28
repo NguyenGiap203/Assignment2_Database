@@ -1,55 +1,73 @@
-// App.tsx
+// App.tsx (Chỉ thay đổi phần routing)
 
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+// Thêm import cho các thành phần mới
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const UserList = lazy(() => import('./pages/user/UserList'));
+const UserDetail = lazy(() => import('./pages/user/UserDetail'));
+const CourseList = lazy(() => import('./pages/course/CourseList'));
+const CourseDetail = lazy(() => import( './pages/course/CourseDetail'));
+const ExerciseList = lazy(() => import( './pages/exercise/ExerciseList'));
+const PostList = lazy(() => import( './pages/post/PostList'));
+const RevenueReport = lazy(() => import( './pages/RevenueReport'));
+const LoginPage = lazy(() => import( './pages/LoginPage')); // <<< Import trang Login
+import { useAuth } from './hooks/useAuth'; // <<< Import hook Auth
 
-// Import tất cả các Pages (Đã sửa lỗi TS2306 bằng cách đảm bảo các file này có export default)
-import Dashboard from './pages/Dashboard';
-import UserList from './pages/user/UserList';
-import UserDetail from './pages/user/UserDetail';
-import CourseList from './pages/course/CourseList';
-import CourseDetail from './pages/course/CourseDetail';
-import ExerciseList from './pages/exercise/ExerciseList';
-import PostList from './pages/post/PostList';
-
-// Giả lập màn hình đăng nhập
-const Login: React.FC = () => (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <h1 className="text-4xl font-bold">LOGIN PAGE (DEMO)</h1>
-        <p className="mt-4">Sử dụng Hook useAuth để bảo vệ các Route Admin.</p>
+const LoadingFallback: React.FC = () => (
+    <div className="flex justify-center items-center h-screen bg-gray-50">
+        <p className="text-xl text-blue-600">Đang tải trang...</p>
     </div>
 );
+
+// Component Wrapper để bảo vệ route Admin
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { isAuthenticated, isCheckingAuth } = useAuth();
+    if (isCheckingAuth) {
+        return (
+            <div className="flex justify-center items-center h-screen">
+                <p className="text-xl text-blue-600">Đang kiểm tra phiên làm việc...</p>
+            </div>
+        );
+    }
+    
+    if (!isAuthenticated) {
+        // Nếu chưa đăng nhập, chuyển hướng đến trang login
+        return <Navigate to="/login" replace />;
+    }
+    // Tùy chọn: Thêm kiểm tra vai trò nếu user.role !== 'Admin'
+    return <>{children}</>;
+};
+
 
 const App: React.FC = () => {
   return (
     <Router>
-      <Routes>
-        {/* Route đăng nhập */}
-        <Route path="/login" element={<Login />} />
+      <Suspense fallback={<LoadingFallback />}>
+        <Routes>
+          {/* Route đăng nhập công khai */}
+          <Route path="/login" element={<LoginPage />} />
 
-        {/* Các Route chính trong Admin Portal */}
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        
-        {/* Quản lý Người dùng */}
-        <Route path="/users" element={<UserList />} />
-        <Route path="/users/:id" element={<UserDetail />} />
+          {/* Các Route cần bảo vệ bởi ProtectedRoute */}
+          <Route path="/" element={<ProtectedRoute><Navigate to="/dashboard" replace /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          
+          <Route path="/users" element={<ProtectedRoute><UserList /></ProtectedRoute>} />
+          <Route path="/users/:id" element={<ProtectedRoute><UserDetail /></ProtectedRoute>} />
 
-        {/* Quản lý Khóa học */}
-        <Route path="/courses" element={<CourseList />} />
-        <Route path="/courses/:id" element={<CourseDetail />} />
+          <Route path="/courses" element={<ProtectedRoute><CourseList /></ProtectedRoute>} />
+          <Route path="/courses/:id" element={<ProtectedRoute><CourseDetail /></ProtectedRoute>} />
 
-        {/* Quản lý Bài tập */}
-        <Route path="/exercises" element={<ExerciseList />} />
+          <Route path="/exercises" element={<ProtectedRoute><ExerciseList /></ProtectedRoute>} />
+          <Route path="/posts" element={<ProtectedRoute><PostList /></ProtectedRoute>} />
 
-        {/* Quản lý Bài chia sẻ */}
-        <Route path="/posts" element={<PostList />} />
-
-        {/* Route 404 */}
-        <Route path="*" element={<div className="p-8 text-center text-red-500">404 - Không tìm thấy trang</div>} />
-      </Routes>
+          <Route path="/reports" element={<ProtectedRoute><RevenueReport /></ProtectedRoute>} />
+          {/* Route 404 */}
+          <Route path="*" element={<div className="p-8 text-center text-red-500">404 - Không tìm thấy trang</div>} />
+        </Routes>
+      </Suspense>
     </Router>
   );
 };
 
-export default App; // Rất quan trọng!
+export default App;

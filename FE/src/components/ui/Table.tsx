@@ -1,35 +1,44 @@
-// components/ui/Table.tsx
+// src/components/ui/Table.tsx
 
 import React from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
+// FIX: Export Column và cho phép 'actions'
 export interface Column<T> {
   key: keyof T | 'actions';
   header: string;
-  render?: (item: T) => React.ReactNode;
-  sortable?: boolean;
+  render?: (item: T) => React.ReactNode; 
+  sortable?: boolean; // Sửa lỗi UserList.tsx đã sử dụng 'sortable'
 }
 
 interface TableProps<T> {
   data: T[];
   columns: Column<T>[];
-  // Thêm các props cho phân trang, tìm kiếm, sắp xếp (nếu cần)
   onSort?: (key: keyof T) => void;
   sortKey?: keyof T;
   sortDirection?: 'asc' | 'desc';
 }
 
-const Table = <T extends Record<string, any>>({ 
+// FIX: Sử dụng cú pháp Generic Functional Component chuẩn
+// T extends object giúp TypeScript suy luận chính xác từ data={...}
+const Table = <T extends object>({ 
   data, 
   columns, 
   onSort, 
   sortKey, 
   sortDirection 
 }: TableProps<T>) => {
+  
+  // FIX: Sửa lỗi TS(2345) tại keyof T: Xử lý type guard cho 'actions'
+  const handleSort = (key: keyof T | 'actions') => {
+    if (onSort && key !== 'actions') {
+      onSort(key as keyof T);
+    }
+  };
+
   return (
     <div className="overflow-x-auto bg-white rounded-lg shadow-md border border-gray-200">
       <table className="min-w-full divide-y divide-gray-200">
-        {/* Header Bảng */}
         <thead className="bg-gray-50">
           <tr>
             {columns.map((column) => (
@@ -37,21 +46,16 @@ const Table = <T extends Record<string, any>>({
                 key={String(column.key)}
                 scope="col"
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                onClick={() => column.sortable && onSort && onSort(column.key)}
+                onClick={() => column.sortable && handleSort(column.key)} 
               >
                 <div className="flex items-center">
                   {column.header}
-                  {column.sortable && (
+                  {/* Logic sắp xếp */}
+                  {column.sortable && column.key !== 'actions' && ( 
                     <span className="ml-1">
                       {sortKey === column.key ? (
-                        sortDirection === 'asc' ? (
-                          <ChevronUp className="w-3 h-3 text-blue-500" />
-                        ) : (
-                          <ChevronDown className="w-3 h-3 text-blue-500" />
-                        )
-                      ) : (
-                        <ChevronDown className="w-3 h-3 text-gray-300" />
-                      )}
+                        sortDirection === 'asc' ? (<ChevronUp className="w-3 h-3 text-blue-500" />) : (<ChevronDown className="w-3 h-3 text-blue-500" />)
+                      ) : (<ChevronDown className="w-3 h-3 text-gray-300" />)}
                     </span>
                   )}
                 </div>
@@ -60,7 +64,6 @@ const Table = <T extends Record<string, any>>({
           </tr>
         </thead>
         
-        {/* Body Bảng */}
         <tbody className="bg-white divide-y divide-gray-200">
           {data.length > 0 ? (
             data.map((item, rowIndex) => (
@@ -72,7 +75,10 @@ const Table = <T extends Record<string, any>>({
                   >
                     {column.render 
                       ? column.render(item) 
-                      : String(item[column.key] ?? '')
+                      // FIX: Type Guard an toàn cho thuộc tính data
+                      : column.key !== 'actions' 
+                        ? String(item[column.key as keyof T] ?? '')
+                        : ''
                     }
                   </td>
                 ))}

@@ -1,12 +1,14 @@
 // pages/course/CourseList.tsx
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { Eye, EyeOff, Trash2, PlusCircle, Search } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import Input from '../../components/ui/Input';
 import MainLayout from '../../components/layout/MainLayout';
 import Table, { Column } from '../../components/ui/Table';
 import Button from '../../components/ui/Button';
 import Pagination from '../../components/ui/Pagination';
 import { useFetch } from '../../hooks/useFetch';
-import { Eye, EyeOff, Trash2, PlusCircle } from 'lucide-react';
 
 // Định nghĩa kiểu dữ liệu Khóa học (phù hợp với course.json)
 interface Course {
@@ -16,19 +18,80 @@ interface Course {
   TeacherName: string;
   NumStudents: number;
   AverageRating: number;
+  TotalDuration: number;
 }
 
+type CourseStatus = 'Tất cả' | 'Đang mở' | 'Sắp ra mắt' | 'Đã đóng';
+
 const CourseList: React.FC = () => {
+  const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  
+  const [sortKey, setSortKey] = useState<keyof Course | null>('CourseID');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [searchTerm, setSearchTerm] = useState('');
   // Tải dữ liệu khóa học (dùng useFetch đã sửa)
+  const [filterStatus, setFilterStatus] = useState<CourseStatus>('Tất cả');
   const { data: courses, isLoading, error, totalItems, totalPages } = useFetch<Course[]>(`/api/courses?page=${currentPage}&limit=${itemsPerPage}`); 
 
+  const statusOptions: CourseStatus[] = ['Tất cả', 'Đang mở', 'Sắp ra mắt', 'Đã đóng'];
+
+  const sortedAndFilteredCourses = useMemo(() => {
+    let filtered = courses || [];
+    // Lọc theo tên khóa học hoặc tên giảng viên
+    if (searchTerm) {
+      const lowerCaseSearch = searchTerm.toLowerCase();
+      filtered = filtered.filter(course => 
+        course.CourseName.toLowerCase().includes(lowerCaseSearch) ||
+        course.TeacherName.toLowerCase().includes(lowerCaseSearch)
+      );
+    }
+
+    if (filterStatus !== 'Tất cả') {
+        filtered = filtered.filter(course => course.CourseState === filterStatus);
+    }
+
+    // Sắp xếp (Sort) - Client-side sorting
+    if (sortKey) {
+      filtered.sort((a, b) => {
+        const aValue = a[sortKey as keyof Course];
+        const bValue = b[sortKey as keyof Course];
+
+        // Xử lý giá trị rỗng/null
+        if (aValue == null || bValue == null) return 0;
+
+        // Xử lý sort số (VD: Rating, Duration)
+        if (typeof aValue === 'number' && typeof bValue === 'number') {
+            return (aValue - bValue) * (sortDirection === 'asc' ? 1 : -1);
+        }
+        
+        // Xử lý sort chuỗi
+        const valA = String(aValue).toLowerCase();
+        const valB = String(bValue).toLowerCase();
+        
+        if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+        if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    
+    return filtered;
+  }, [courses, sortKey, sortDirection, searchTerm, filterStatus]); // Chạy lại logic khi một trong các dependency thay đổi
+
+  // Hàm xử lý khi click vào header cột
+  const handleSort = (key: keyof Course) => {
+    if (sortKey === key) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortDirection('asc');
+    }
+  };
+
   const courseColumns: Column<Course>[] = [
-    { key: 'CourseID', header: 'ID' },
+    { key: 'CourseID', header: 'ID', sortable: true },
     { key: 'CourseName', header: 'Tên Khóa học', sortable: true },
-    { key: 'TeacherName', header: 'Giảng viên' },
+    { key: 'TeacherName', header: 'Giảng viên', sortable: true },
     { 
       key: 'CourseState', 
       header: 'Trạng thái',
@@ -51,7 +114,11 @@ const CourseList: React.FC = () => {
       header: 'Hành động',
       render: (course) => (
         <div className="space-x-2 flex">
-          <Button size="sm" variant="secondary" onClick={() => console.log('View', course.CourseID)}>Chi tiết</Button>
+          <Button 
+            size="sm" 
+            variant="secondary" 
+            onClick={() => navigate(`/courses/${course.CourseID}`)}
+          > Chi tiết</Button>
           <Button size="sm" variant="ghost" onClick={() => console.log('Toggle State', course.CourseID)}>
             {course.CourseState === 'Đang mở' ? <EyeOff className="w-4 h-4 text-orange-500" /> : <Eye className="w-4 h-4 text-green-500" />}
           </Button>
@@ -68,7 +135,33 @@ const CourseList: React.FC = () => {
       <h2 className="text-3xl font-bold text-gray-800 mb-6">Quản lý Khóa học</h2>
       
       {/* Thanh công cụ */}
-      <div className="flex justify-end items-center mb-6">
+      <div className="flex items-center justify-between mb-6 p-4 bg-white rounded-lg shadow-sm">
+        <div className="w-1/3">
+          {/* INPUT TÌM KIẾM MỚI */}
+          <Input 
+            type="text"
+            placeholder="Tìm kiếm khóa học hoặc giảng viên..."
+            icon={<Search className="w-5 h-5" />}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full"
+          />
+        </div>
+        
+        <div className="flex space-x-3 mb-4">
+          {statusOptions.map(status => (
+            <Button
+              key={status}
+              variant={filterStatus === status ? 'primary' : 'ghost'}
+              onClick={() => setFilterStatus(status)}
+              size="sm"
+              className={filterStatus === status ? 'shadow-md' : 'text-gray-600'}
+            >
+              {status} ({courses?.filter(c => status === 'Tất cả' || c.CourseState === status).length || 0})
+            </Button>
+          ))}
+        </div>
+
         <Button variant="primary" onClick={() => console.log('Add New Course')}>
           <PlusCircle className="w-5 h-5 mr-2" />
           Thêm Khóa học
@@ -81,8 +174,14 @@ const CourseList: React.FC = () => {
       {!isLoading && courses && (
         <>
           <Table<Course> 
-            data={courses}
+            // data={courses}
+            // columns={courseColumns}
+            data={sortedAndFilteredCourses}
             columns={courseColumns}
+            // Truyền trạng thái sort xuống Table
+            onSort={handleSort}
+            // sortKey={sortKey}
+            sortDirection={sortDirection}
           />
           <Pagination
             currentPage={currentPage}

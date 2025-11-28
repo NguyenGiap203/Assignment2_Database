@@ -49,12 +49,4 @@ const Input: React.FC<InputProps> = ({
   );
 };
 
-export default Input;
-
-/* Ví dụ sử dụng:
-<Input 
-  label="Tìm kiếm người dùng" 
-  placeholder="Nhập tên hoặc email..." 
-  icon={<Search className="w-5 h-5" />}
-/>
-*/
+export default React.memo(Input);

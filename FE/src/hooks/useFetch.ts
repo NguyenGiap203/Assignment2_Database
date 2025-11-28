@@ -15,7 +15,7 @@ interface FetchState<T> {
 
 // Hàm giả lập gọi API và trả về dữ liệu dựa trên URL
 const simulateApiCall = async (url: string) => {
-  await new Promise(resolve => setTimeout(resolve, 500)); 
+  // await new Promise(resolve => setTimeout(resolve, 500)); 
 
   let data: any[] = [];
   let totalItems = 0;
@@ -30,6 +30,17 @@ const simulateApiCall = async (url: string) => {
     data = mockExercises;
   } else if (url.includes('/posts')) {
     data = mockUsers.slice(0, 3).map(u => ({ ...u, PostID: u.UserID.replace('USR', 'POST'), Title: `Bài chia sẻ về ${u.FullName}` })); 
+  } else if (url.includes('/api/reports/monthly-revenue')) { // <<< THÊM LOGIC BÁO CÁO
+      // Dữ liệu giả lập từ Stored Procedure
+      data = [
+        { Month: 1, Year: 2024, TotalRevenue: 150000000 },
+        { Month: 2, Year: 2024, TotalRevenue: 180000000 },
+        { Month: 3, Year: 2024, TotalRevenue: 220000000 },
+        { Month: 4, Year: 2024, TotalRevenue: 195000000 },
+        { Month: 5, Year: 2024, TotalRevenue: 250000000 },
+        { Month: 6, Year: 2024, TotalRevenue: 210000000 },
+      ];
+      totalItems = data.length;
   }
   
   totalItems = data.length;

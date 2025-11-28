@@ -1,13 +1,23 @@
 // components/layout/Header.tsx
 
 import React from 'react';
-import { Menu, Bell, User } from 'lucide-react';
+import { Menu, Bell, User, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
+import Button from '../ui/Button';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout(); // Xóa trạng thái đăng nhập và token
+    navigate('/login'); // <<< Chuyển hướng ngay lập tức đến trang login
+  };
   return (
     <header className="flex items-center justify-between h-16 px-6 bg-white border-b border-gray-200 shadow-sm sticky top-0 z-10">
       {/* Nút Toggle Sidebar và Tên dự án */}
@@ -46,6 +56,17 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             Admin Name
           </span>
         </div>
+
+        {/* Nút Logout */}
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={handleLogout}
+          className="text-gray-600 hover:text-red-500"
+        >
+          <LogOut className="w-5 h-5" />
+          <span className="ml-1 hidden md:inline">Đăng xuất</span>
+        </Button>
       </div>
     </header>
   );

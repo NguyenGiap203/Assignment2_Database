@@ -1,4 +1,4 @@
-// pages/exercise/ExerciseList.tsx
+// src/pages/exercise/ExerciseList.tsx
 
 import React, { useState } from 'react';
 import MainLayout from '../../components/layout/MainLayout';
@@ -10,7 +10,6 @@ import { useFetch } from '../../hooks/useFetch';
 import { formatDate } from '../../utils/format';
 import { Eye, Search } from 'lucide-react';
 
-// Định nghĩa kiểu dữ liệu cho Lần làm bài (Attempt), khớp với exerciseAttemp.json
 interface ExerciseAttempt {
   AttemptID: string;
   UserID: string;
@@ -28,7 +27,6 @@ const ExerciseList: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   
-  // Tải dữ liệu lịch sử làm bài
   const { 
     data: attempts, 
     isLoading, 
@@ -37,7 +35,6 @@ const ExerciseList: React.FC = () => {
     totalPages 
   } = useFetch<ExerciseAttempt[]>(`/api/exercises/attempts?page=${currentPage}&limit=${itemsPerPage}`); 
 
-  // Định nghĩa cột cho Table
   const attemptColumns: Column<ExerciseAttempt>[] = [
     { key: 'AttemptID', header: 'ID Lần làm' },
     { key: 'UserName', header: 'Học viên', sortable: true },
@@ -101,7 +98,6 @@ const ExerciseList: React.FC = () => {
             className="w-full"
           />
         </div>
-        {/* Không có nút thêm mới vì Admin không tạo Attempt */}
       </div>
 
       {isLoading && <div className="p-6 text-center text-blue-600">Đang tải dữ liệu...</div>}
@@ -109,10 +105,8 @@ const ExerciseList: React.FC = () => {
 
       {!isLoading && attempts && (
         <>
-          <Table<ExerciseAttempt> 
-            data={attempts}
-            columns={attemptColumns as Column<ExerciseAttempt>[]}
-          />
+          {/* FIX: Bỏ Generic Type và ép kiểu cứng. */}
+          <Table<ExerciseAttempt> data={attempts} columns={attemptColumns} />
           
           <Pagination
             currentPage={currentPage}

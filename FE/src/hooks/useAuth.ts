@@ -1,6 +1,6 @@
-// hooks/useAuth.ts
+// hooks/useAuth.ts (ĐÃ SỬA LỖI BỎ QUA ĐĂNG NHẬP)
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 interface UserProfile {
   id: string;
@@ -14,6 +14,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
+  isCheckingAuth: boolean;
 }
 
 const defaultUser: UserProfile = {
@@ -24,15 +25,28 @@ const defaultUser: UserProfile = {
 };
 
 export const useAuth = (): AuthContextType => {
-  const [user, setUser] = useState<UserProfile | null>(defaultUser);
+  // Khởi tạo trạng thái ban đầu là null (chưa đăng nhập)
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const isAuthenticated = !!user;
 
-  const login = useCallback(async (username: string, password: string) => {
-    await new Promise(resolve => setTimeout(resolve, 500)); 
-
-    if (username === 'admin' && password === 'admin') {
+  // Khôi phục phiên làm việc từ Local Storage
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      // Giả lập: Nếu có token, thiết lập lại user profile
       setUser(defaultUser);
-      localStorage.setItem('authToken', 'mock_admin_token');
+    }
+    setIsCheckingAuth(false);
+  }, []);
+
+  const login = useCallback(async (username: string, password: string) => {
+    // await new Promise(resolve => setTimeout(resolve, 500)); 
+
+    if (username === 'sManager' && password === 'sManager') {
+      setUser(defaultUser);
+      // Lưu token/flag vào Local Storage để giữ phiên
+      localStorage.setItem('authToken', 'mock_admin_token'); 
       return true;
     }
     return false;
@@ -40,8 +54,8 @@ export const useAuth = (): AuthContextType => {
 
   const logout = useCallback(() => {
     setUser(null);
-    localStorage.removeItem('authToken');
+    localStorage.removeItem('authToken'); // Xóa token khi đăng xuất
   }, []);
 
-  return { user, isAuthenticated, login, logout };
+  return { user, isAuthenticated, login, logout, isCheckingAuth};
 };

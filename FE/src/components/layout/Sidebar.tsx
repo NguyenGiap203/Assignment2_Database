@@ -1,7 +1,7 @@
 // components/layout/Sidebar.tsx
 
 import React from 'react';
-import { LayoutDashboard, Users, BookOpen, FileText, BarChart2, MessageSquare, ListChecks, TestTube } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, BarChart2, MessageSquare, ListChecks } from 'lucide-react';
 
 interface SidebarProps {
   isOpen: boolean; 
@@ -41,10 +41,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
     { to: '/dashboard', icon: <LayoutDashboard className="w-5 h-5" />, label: 'Dashboard' },
     { to: '/users', icon: <Users className="w-5 h-5" />, label: 'Quản lý Người dùng' },
     { to: '/courses', icon: <BookOpen className="w-5 h-5" />, label: 'Quản lý Khóa học' },
-    { to: '/practices', icon: <ListChecks className="w-5 h-5" />, label: 'Bài luyện tập' },
-    { to: '/exercises', icon: <BarChart2 className="w-5 h-5" />, label: 'Bài tập bắt buộc' },
-    { to: '/tests', icon: <TestTube className="w-5 h-5" />, label: 'Bài kiểm tra' },
+    { to: '/exercises', icon: <ListChecks className="w-5 h-5" />, label: 'Bài tập bắt buộc' },
     { to: '/posts', icon: <MessageSquare className="w-5 h-5" />, label: 'Bài chia sẻ' },
+    { to: '/reports', icon: <BarChart2 className="w-5 h-5" />, label: 'Báo cáo Doanh thu' }, // <<< MỤC MỚI
   ];
 
   return (

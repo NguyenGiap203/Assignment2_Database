@@ -54,4 +54,4 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer 
   );
 };
 
-export default Modal;
+export default React.memo(Modal);
