@@ -16,12 +16,17 @@ import { useNavigate } from 'react-router-dom';
 // FIX: Interface User đầy đủ (đã sửa lỗi TS2322)
 interface User {
   UserID: string;
+  AccountName: string; // Thêm AccountName
+  AccountPassword?: string;
   FullName: string;
   Email: string;
   Role: 'Admin' | 'Teacher' | 'Student';
   AccountState: boolean;
-  EnrollmentDate: string; // Bắt buộc phải có
-  PhoneNumber?: string; // Tùy chọn
+  EnrollmentDate: string; 
+  PhoneNumber?: string; 
+  Nation?: string; // Thêm Nation (optional)
+  Province?: string; // Thêm Province (optional)
+  Ward?: string; // Thêm Ward (optional)
 }
 
 const UserList: React.FC = () => {
@@ -57,6 +62,7 @@ const UserList: React.FC = () => {
 
   const userColumns: Column<User>[] = [
     { key: 'UserID', header: 'ID' },
+    { key: 'AccountName', header: 'Tên TK' },
     { key: 'FullName', header: 'Họ Tên', sortable: true },
     { key: 'Email', header: 'Email' },
     { key: 'Role', header: 'Vai trò', sortable: true },

@@ -10,15 +10,23 @@ import Button from '../../components/ui/Button';
 import Pagination from '../../components/ui/Pagination';
 import { useFetch } from '../../hooks/useFetch';
 
-// Định nghĩa kiểu dữ liệu Khóa học (phù hợp với course.json)
+// Định nghĩa kiểu dữ liệu Khóa học (Đã đồng bộ với COURSE table và courseDetail)
 interface Course {
   CourseID: string;
   CourseName: string;
-  CourseState: string;
+  CourseState: 'Đang mở' | 'Sắp ra mắt' | 'Đã đóng'; // Thay string bằng union type
+  TeacherID: string; // Thêm TeacherID
   TeacherName: string;
+  TotalDuration: number;
   NumStudents: number;
   AverageRating: number;
-  TotalDuration: number;
+  
+  // Thêm các trường thống kê khác từ SQL Course table
+  NumRatings: number;
+  NumTests: number;
+  NumTheoryLessons: number;
+  NumExercises: number;
+  NumVideos: number;
 }
 
 type CourseStatus = 'Tất cả' | 'Đang mở' | 'Sắp ra mắt' | 'Đã đóng';

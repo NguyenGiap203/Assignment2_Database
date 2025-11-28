@@ -26,7 +26,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer 
     >
       {/* Modal Content */}
       <div 
-        className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-auto transform transition-all duration-300 scale-100"
+        className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-auto transform transition-all duration-300 scale-100 flex flex-col max-h-full"
         onClick={handleContentClick}
       >
         {/* Header Modal */}
@@ -38,7 +38,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer 
         </div>
         
         {/* Body Modal */}
-        <div className="p-6">
+        <div className="p-6 overflow-y-auto max-h-[80vh] flex-grow">
           {children}
         </div>
 

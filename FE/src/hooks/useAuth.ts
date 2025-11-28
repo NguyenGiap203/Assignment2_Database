@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 
 interface UserProfile {
   id: string;
+  AccountName: string;
   name: string;
   role: 'Admin' | 'Teacher' | 'Student';
   email: string;
@@ -19,6 +20,7 @@ interface AuthContextType {
 
 const defaultUser: UserProfile = {
   id: 'USR00001',
+  AccountName: 'sManager',
   name: 'Nguyễn Văn A',
   role: 'Admin',
   email: 'admin.a@lms.com'

@@ -12,13 +12,18 @@ interface UserFormProps {
   onCancel: () => void;
 }
 
-// Giả định kiểu dữ liệu User cơ bản cần cho Form
+// Đã đồng bộ với SQL USERTABLE
 interface User {
   UserID: string;
+  AccountName: string; // Thêm AccountName
+  AccountPassword?: string;
   FullName: string;
   Email: string;
-  Role: 'Admin' | 'Teacher' | 'Student';
+  Role: 'Admin' | 'Teacher' | 'Student'; // Giữ lại Role cho tiện logic frontend
   PhoneNumber: string;
+  Nation?: string; // Thêm Nation (optional)
+  Province?: string; // Thêm Province (optional)
+  Ward?: string; // Thêm Ward (optional)
   AccountState: boolean;
   EnrollmentDate: string;
 }
@@ -26,12 +31,17 @@ interface User {
 const UserForm: React.FC<UserFormProps> = ({ initialData, isSubmitting, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState<User>(initialData || {
     UserID: '',
+    AccountName: '', // Khởi tạo AccountName
+    AccountPassword: '',
     FullName: '',
     Email: '',
     Role: 'Student',
     PhoneNumber: '',
+    Nation: '',
+    Province: '',
+    Ward: '',
     AccountState: true,
-    EnrollmentDate: new Date().toISOString(),
+    EnrollmentDate: new Date().toISOString().split('T')[0], // Dùng định dạng DATE (YYYY-MM-DD)
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -60,12 +70,21 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, isSubmitting, onSubmit
       newErrors.FullName = 'Họ tên không được để trống.';
       isValid = false;
     }
+    if (!formData.AccountName.trim()) {
+        newErrors.AccountName = 'Tên tài khoản không được để trống.';
+        isValid = false;
+    }
     if (!isValidEmail(formData.Email)) {
       newErrors.Email = 'Địa chỉ email không hợp lệ.';
       isValid = false;
     }
     // Thêm các validation khác cho Số điện thoại, ID, v.v.
-
+    if (!initialData) {
+        if (!formData.AccountPassword?.trim()) {
+            newErrors.AccountPassword = 'Mật khẩu là bắt buộc.';
+            isValid = false;
+        }
+    }
     setErrors(newErrors);
     return isValid;
   };
@@ -82,7 +101,27 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, isSubmitting, onSubmit
       <h3 className="text-2xl font-semibold mb-4 text-blue-600">
         {initialData ? `Cập nhật người dùng: ${initialData.FullName}` : 'Tạo người dùng mới'}
       </h3>
-
+      
+      {/* Thêm AccountName */}
+      <Input
+        label="Tên tài khoản (Login Name)"
+        name="AccountName"
+        value={formData.AccountName}
+        onChange={handleChange}
+        error={errors.AccountName}
+        required
+        disabled={!!initialData} // Không cho sửa AccountName khi Edit
+      />
+      <Input
+        label="Mật khẩu"
+        name="AccountPassword"
+        type="password"
+        value={formData.AccountPassword}
+        onChange={handleChange}
+        error={errors.AccountPassword}
+        placeholder="Mật khẩu (tối thiểu 8 ký tự)"
+        required
+      />
       <Input
         label="Họ tên"
         name="FullName"
@@ -99,6 +138,31 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, isSubmitting, onSubmit
         onChange={handleChange}
         error={errors.Email}
         required
+      />
+      {/* Thêm các trường địa chỉ (Nation, Province, Ward) */}
+      <Input
+        label="Số điện thoại"
+        name="PhoneNumber"
+        value={formData.PhoneNumber}
+        onChange={handleChange}
+      />
+      <Input
+        label="Quốc gia"
+        name="Nation"
+        value={formData.Nation}
+        onChange={handleChange}
+      />
+      <Input
+        label="Tỉnh/Thành phố"
+        name="Province"
+        value={formData.Province}
+        onChange={handleChange}
+      />
+      <Input
+        label="Quận/Huyện/Phường/Xã"
+        name="Ward"
+        value={formData.Ward}
+        onChange={handleChange}
       />
       
       {/* Chọn Role */}
