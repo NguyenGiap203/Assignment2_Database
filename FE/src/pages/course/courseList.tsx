@@ -1,6 +1,6 @@
-// pages/course/CourseList.tsx
+// src/pages/course/CourseList.tsx
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Eye, EyeOff, Trash2, PlusCircle, Search, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Input from '../../components/ui/Input';
@@ -9,138 +9,128 @@ import Table, { Column } from '../../components/ui/Table';
 import Button from '../../components/ui/Button';
 import Pagination from '../../components/ui/Pagination';
 import { useFetch } from '../../hooks/useFetch';
+import axiosClient from '../../api/axiosClient';
 
-// Định nghĩa kiểu dữ liệu Khóa học
+// Interface khớp với Course Model Backend + Teacher Info
 interface Course {
-  CourseID: string;
-  CourseName: string;
-  CourseState: 'Đang mở' | 'Sắp ra mắt' | 'Đã đóng' | string;
-  TeacherID: string; 
-  Teacher: { User: { FullName: string } }; 
-  TotalDuration: number;
-  NumStudents: number;
-  AverageRating: number;
-  
-  NumRatings: number;
-  NumTests: number;
-  NumTheoryLessons: number;
-  NumExercises: number;
-  NumVideos: number;
+  courseID: string;
+  courseName: string;
+  courseState: string;
+  teacherID: string;
+  teacher?: { 
+      user?: { fullName: string } 
+  }; 
+  totalDuration: number;
+  numStudents: number;
+  averageRating: number;
 }
 
-type CourseStatus = 'Tất cả' | 'Đang mở' | 'Sắp ra mắt' | 'Đã đóng';
-
-// FIX: Chỉ cho phép các key được hỗ trợ bởi BE Controller
-type CourseSortKey = 'CourseName' | 'NumStudents' | 'AverageRating' | 'TotalDuration';
+// Các key được Backend hỗ trợ sort
+type CourseSortKey = 'name' | 'students' | 'rating' | 'duration';
 
 const CourseList: React.FC = () => {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  // Khởi tạo state cho sorting
-  const [sortKey, setSortKey] = useState<CourseSortKey>('CourseName'); 
+  
+  // State quản lý Sort & Search
+  const [sortKey, setSortKey] = useState<CourseSortKey>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<CourseStatus>('Tất cả');
+  const [refetchKey, setRefetchKey] = useState(0); // Để reload list khi xóa
 
-  // FIX: Logic tạo URL dựa trên Search và Sort
+  // Logic tạo URL Fetch API
   const fetchUrl = useMemo(() => {
-    // Mapping FE key sang BE key
-    const beSortKey = (key: CourseSortKey) => {
-        switch(key) {
-            case 'CourseName': return 'name';
-            case 'NumStudents': return 'students';
-            case 'AverageRating': return 'rating';
-            case 'TotalDuration': return 'duration'; // Đã thêm TotalDuration
-            default: return 'name'; // Fallback
-        }
-    }
-    
     if (searchTerm) {
-        // Ưu tiên API Search nếu có keyword (BE có endpoint này)
         return `/Course/search?keyword=${searchTerm}`;
     }
-    
-    // API List/Sort (BE có endpoint này)
-    const sortParameter = beSortKey(sortKey);
-    return `/Course?sortBy=${sortParameter}&sortOrder=${sortDirection}`;
+    return `/Course?sortBy=${sortKey}&sortOrder=${sortDirection}`;
+  }, [searchTerm, sortKey, sortDirection, refetchKey]);
 
-  }, [sortKey, sortDirection, searchTerm]);
+  // GỌI API LẤY DANH SÁCH TẠI ĐÂY
+  const { data: courses, isLoading, error } = useFetch<Course[]>(fetchUrl);
 
-  // Tải dữ liệu khóa học
-  const { 
-    data: courses, 
-    isLoading, 
-    error
-  } = useFetch<Course[]>(fetchUrl); 
+  // Debug: Log dữ liệu nhận được để kiểm tra
+  useEffect(() => {
+      if (courses) console.log("Fetched Courses:", courses);
+      if (error) console.error("Fetch Error:", error);
+  }, [courses, error]);
 
-  const statusOptions: CourseStatus[] = ['Tất cả', 'Đang mở', 'Sắp ra mắt', 'Đã đóng'];
-
-  // Lọc client-side cho trạng thái và xử lý phân trang
+  // Phân trang Client-side (Vì API hiện tại trả về all list)
   const { paginatedCourses, totalItems, totalPages } = useMemo(() => {
-    let filtered = courses || [];
-    
-    // Lọc theo trạng thái (Client-side)
-    if (filterStatus !== 'Tất cả') {
-        filtered = filtered.filter(course => course.CourseState === filterStatus);
-    }
-    
-    const totalItems = filtered.length;
+    const list = courses || [];
+    const totalItems = list.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
-
-    // Phân trang client-side
     const start = (currentPage - 1) * itemsPerPage;
-    const paginatedCourses = filtered.slice(start, start + itemsPerPage);
-
+    const paginatedCourses = list.slice(start, start + itemsPerPage);
+    
     return { paginatedCourses, totalItems, totalPages };
-  }, [courses, filterStatus, currentPage, itemsPerPage]);
+  }, [courses, currentPage, itemsPerPage]);
 
-
-  // Hàm xử lý khi click vào header cột (chỉ cập nhật state để trigger useFetch lại)
-  const handleSort = useCallback((key: CourseSortKey) => {
-    if (sortKey === key) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortKey(key);
-      setSortDirection('asc');
-    }
-  }, [sortKey, sortDirection]);
-
-  // Cập nhật handleTableSort cho Table (Chỉ cho phép sort các cột được BE hỗ trợ)
-  const handleTableSort = useCallback((key: keyof Course) => {
-      if (['CourseName', 'NumStudents', 'AverageRating', 'TotalDuration'].includes(key as string)) {
-          handleSort(key as CourseSortKey);
+  // Xử lý Xóa Khóa học
+  const handleDelete = useCallback(async (courseID: string) => {
+      if (window.confirm("Bạn có chắc chắn muốn xóa khóa học này? Hành động không thể hoàn tác.")) {
+          try {
+              await axiosClient.delete(`/Course/${courseID}`);
+              alert("Xóa khóa học thành công!");
+              setRefetchKey(prev => prev + 1); // Trigger fetch lại
+          } catch (err: any) {
+              alert(`Lỗi xóa: ${err.response?.data?.message || err.message}`);
+          }
       }
-  }, [handleSort]);
+  }, []);
 
+  // Xử lý thay đổi Sort
+  const handleTableSort = (key: string) => {
+      let apiSortKey: CourseSortKey = 'name';
+      if (key === 'courseName') apiSortKey = 'name';
+      else if (key === 'numStudents') apiSortKey = 'students';
+      else if (key === 'averageRating') apiSortKey = 'rating';
+      else if (key === 'totalDuration') apiSortKey = 'duration';
+      else return; 
+
+      if (sortKey === apiSortKey) {
+          setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+      } else {
+          setSortKey(apiSortKey);
+          setSortDirection('asc');
+      }
+  };
 
   const courseColumns: Column<Course>[] = [
-    { key: 'CourseID', header: 'ID', sortable: false }, // Không được hỗ trợ sort
-    { key: 'CourseName', header: 'Tên Khóa học', sortable: true }, // Hỗ trợ sort: name
+    { key: 'courseID', header: 'ID', sortable: false },
+    { key: 'courseName', header: 'Tên Khóa học', sortable: true },
     { 
-        key: 'Teacher', 
+        key: 'teacherID', 
         header: 'Giảng viên', 
-        sortable: false, // Không được hỗ trợ sort
-        render: (course) => course.Teacher?.User?.FullName || 'N/A' 
+        sortable: false,
+        render: (c) => c.teacher?.user?.fullName || 'N/A'
     },
-    { key: 'CourseState', header: 'Trạng thái', sortable: false }, // Không được hỗ trợ sort
-    { key: 'NumStudents', header: 'Học viên', sortable: true }, // Hỗ trợ sort: students
-    { key: 'AverageRating', header: 'Đánh giá (5)', sortable: true }, // Hỗ trợ sort: rating
-    { key: 'TotalDuration', header: 'Thời lượng (giờ)', sortable: true }, // Hỗ trợ sort: duration
+    { 
+        key: 'courseState', 
+        header: 'Trạng thái', 
+        render: (c) => (
+            <span className={`px-2 py-1 rounded text-xs ${
+                c.courseState === 'Đang mở' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+            }`}>
+                {c.courseState}
+            </span>
+        )
+    },
+    { key: 'numStudents', header: 'Học viên', sortable: true },
+    { key: 'averageRating', header: 'Đánh giá', sortable: true, render: (c) => c.averageRating.toFixed(1) },
+    { key: 'totalDuration', header: 'Thời lượng (h)', sortable: true },
     { 
       key: 'actions', 
       header: 'Hành động',
       render: (course) => (
-        <div className="space-x-2 flex">
+        <div className="flex space-x-2">
           <Button 
             size="sm" 
             variant="secondary" 
-            onClick={() => navigate(`/courses/${course.CourseID}`)}
+            onClick={() => navigate(`/courses/${course.courseID}`)}
           > Chi tiết</Button>
-          <Button size="sm" variant="ghost" onClick={() => console.log('Toggle State', course.CourseID)}>
-            {course.CourseState === 'Đang mở' ? <EyeOff className="w-4 h-4 text-orange-500" /> : <Eye className="w-4 h-4 text-green-500" />}
-          </Button>
-          <Button size="sm" variant="danger" onClick={() => console.log('Delete', course.CourseID)}>
+          <Button size="sm" variant="danger" onClick={() => handleDelete(course.courseID)}>
             <Trash2 className="w-4 h-4" />
           </Button>
         </div>
@@ -152,50 +142,32 @@ const CourseList: React.FC = () => {
     <MainLayout>
       <h2 className="text-3xl font-bold text-gray-800 mb-6">Quản lý Khóa học</h2>
       
-      {/* Thanh công cụ */}
-      <div className="flex items-center justify-between mb-6 p-4 bg-white rounded-lg shadow-sm">
+      {/* Toolbar */}
+      <div className="flex justify-between items-center mb-6 p-4 bg-white rounded-lg shadow-sm">
         <div className="w-1/3">
-          {/* Search Input: Giữ lại vì BE có API /Course/search */}
           <Input 
             type="text"
             placeholder="Tìm kiếm khóa học..."
             icon={<Search className="w-5 h-5" />}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full"
           />
         </div>
-        
-        <div className="flex space-x-3 mb-4">
-          {statusOptions.map(status => (
-            <Button
-              key={status}
-              variant={filterStatus === status ? 'primary' : 'ghost'}
-              onClick={() => setFilterStatus(status)}
-              size="sm"
-              className={filterStatus === status ? 'shadow-md' : 'text-gray-600'}
-            >
-              {status} ({courses?.filter(c => status === 'Tất cả' || c.CourseState === status).length || 0})
-            </Button>
-          ))}
-        </div>
-
-        <Button variant="primary" onClick={() => console.log('Add New Course')}>
-          <PlusCircle className="w-5 h-5 mr-2" />
-          Thêm Khóa học
+        <Button variant="primary" onClick={() => console.log("Create modal open")}>
+          <PlusCircle className="w-5 h-5 mr-2" /> Thêm Khóa học
         </Button>
       </div>
 
-      {isLoading && <div className="p-6 text-center text-blue-600 flex justify-center items-center"><Loader2 className="w-6 h-6 animate-spin mr-2" />Đang tải dữ liệu...</div>}
-      {error && <div className="p-6 text-center text-red-600">Lỗi: {error}</div>}
+      {isLoading && <div className="p-12 text-center text-blue-600"><Loader2 className="w-8 h-8 animate-spin mx-auto mb-2"/>Đang tải dữ liệu...</div>}
+      {error && <div className="p-6 text-center text-red-600">Lỗi kết nối: {error}</div>}
 
-      {!isLoading && (
+      {!isLoading && courses && (
         <>
           <Table<Course> 
             data={paginatedCourses}
             columns={courseColumns}
-            onSort={handleTableSort as (key: keyof Course) => void}
-            sortKey={sortKey as keyof Course}
+            onSort={(key) => handleTableSort(key as string)}
+            sortKey={sortKey === 'name' ? 'courseName' : sortKey === 'students' ? 'numStudents' : sortKey === 'rating' ? 'averageRating' : 'totalDuration'}
             sortDirection={sortDirection}
           />
           <Pagination

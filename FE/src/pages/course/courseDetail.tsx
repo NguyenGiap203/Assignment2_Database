@@ -1,71 +1,110 @@
-// pages/course/CourseDetail.tsx
+// src/pages/course/CourseDetail.tsx
 
-import React from 'react';
+import React, { useState } from 'react';
 import MainLayout from '../../components/layout/MainLayout';
 import { 
     ArrowLeft, User, Star, Clock, BookOpen, 
-    FileText, Video, ListChecks, MessageSquare, Award, Loader2 
+    FileText, Video, ListChecks, MessageSquare, Loader2, X 
 } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import StatCardDetailed from '../../components/ui/StatCardDetailed'; 
 import DetailSection from '../../components/layout/DetailSection'; 
 import { useParams } from 'react-router-dom';
-import { useFetch } from '../../hooks/useFetch'; // Import useFetch
+import { useFetch } from '../../hooks/useFetch';
+import Modal from '../../components/ui/Modal';
+import Table, { Column } from '../../components/ui/Table';
+import { formatDate } from '../../utils/format';
 
-// --- INTERFACE ĐỒNG BỘ ---
+// --- INTERFACES ---
 interface Chapter {
-    ChapterID: string;
-    ChapterTitle: string;
-    ChapterOrder: number;
-    ChapterDescription?: string;
-    // Thêm các trường thống kê nội dung từ BE ChapterController
-    VideoLessons?: any[];
-    TheoryLessons?: any[];
-    Exercises?: any[];
-    Tests?: any[];
+    chapterID: string;
+    chapterTitle: string;
+    chapterOrder: number;
+    chapterDescription?: string;
 }
 
-interface Course {
-    // Core Course Details
-    CourseID: string;
-    CourseName: string;
-    CourseState: 'Đang mở' | 'Sắp ra mắt' | 'Đã đóng';
-    TeacherID: string;
-    // Thêm các trường cần thiết từ BE Course Model
-    Teacher?: { User: { FullName: string } }; 
-    TotalDuration: number;
-    Description?: string; // Tạm thời dùng trường này nếu BE có
-
-    // Stats
-    AverageRating: number;
-    NumRatings: number;
-    NumStudents: number;
-    
-    // Content Counts (từ BE Course table)
-    NumTests: number;
-    NumTheoryLessons: number;
-    NumExercises: number;
-    NumVideos: number;
-    
-    // Nested Data
-    Chapters: Chapter[];
-    // Giả định NumDiscussions và NumCertificates vẫn là mock
-    NumDiscussions: number;
-    NumCertificates: number;
+interface CourseDetailData {
+    courseID: string;
+    courseName: string;
+    courseState: string;
+    teacherID: string;
+    teacher?: { 
+        user?: { fullName: string; email: string } 
+    };
+    totalDuration: number;
+    numStudents: number;
+    averageRating: number;
+    numRatings: number;
+    numTests: number;
+    numTheoryLessons: number;
+    numExercises: number;
+    numVideos: number;
+    chapters?: Chapter[];
 }
-// -------------------------
+
+// Interface cho Enrollment
+interface Enrollment {
+    userID: string;
+    user?: { fullName: string; email: string };
+    enrollmentDate: string;
+}
+
+// Interface cho Rating
+interface Rating {
+    userID: string;
+    user?: { fullName: string };
+    ratingValue: number;
+}
 
 const CourseDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>(); 
     
-    // FIX: Sử dụng useFetch thực tế để lấy chi tiết khóa học
-    const { data: course, isLoading, error } = useFetch<Course>(`/Course/${id}`);
+    // State quản lý Modal
+    const [isEnrollmentModalOpen, setIsEnrollmentModalOpen] = useState(false);
+    const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
 
-    // Dữ liệu mock bổ sung (vì BE Course model không chứa sẵn Description, NumDiscussions, NumCertificates)
-    const teacherName = course?.Teacher?.User?.FullName || 'N/A';
-    const descriptionMock = "Cần thêm trường Description vào BE Course Model nếu muốn hiển thị nội dung này từ API.";
-    const numDiscussionsMock = 45;
-    const numCertificatesMock = 1000;
+    // Fetch thông tin khóa học
+    const { data: course, isLoading, error } = useFetch<CourseDetailData>(`/Course/${id}`);
+
+    // --- Component con: Danh sách Enrollment (Fetch khi Modal mở) ---
+    const EnrollmentList = () => {
+        const { data: enrollments, isLoading: loadingEnrolls } = useFetch<Enrollment[]>(`/Enrollment/course/${id}`);
+        
+        const columns: Column<Enrollment>[] = [
+            { key: 'userID', header: 'ID Học viên' },
+            { key: 'user', header: 'Họ tên', render: (e) => e.user?.fullName || 'N/A' },
+            { key: 'user', header: 'Email', render: (e) => e.user?.email || 'N/A' },
+            { key: 'enrollmentDate', header: 'Ngày đăng ký', render: (e) => formatDate(e.enrollmentDate) },
+        ];
+
+        if (loadingEnrolls) return <div className="text-center p-4">Đang tải danh sách...</div>;
+        
+        return <Table<Enrollment> data={enrollments || []} columns={columns} />;
+    };
+
+    // --- Component con: Danh sách Rating (Fetch khi Modal mở) ---
+    const RatingList = () => {
+        const { data: ratings, isLoading: loadingRatings } = useFetch<Rating[]>(`/Rating/course/${id}`);
+
+        const columns: Column<Rating>[] = [
+            { key: 'userID', header: 'ID Học viên' },
+            { key: 'user', header: 'Người đánh giá', render: (r) => r.user?.fullName || 'N/A' },
+            { 
+                key: 'ratingValue', 
+                header: 'Điểm', 
+                render: (r) => (
+                    <div className="flex items-center text-yellow-500">
+                        <span className="font-bold mr-1">{r.ratingValue}</span> <Star className="w-4 h-4 fill-current" />
+                    </div>
+                ) 
+            },
+        ];
+
+        if (loadingRatings) return <div className="text-center p-4">Đang tải đánh giá...</div>;
+
+        return <Table<Rating> data={ratings || []} columns={columns} />;
+    };
+
 
     if (isLoading) {
         return (
@@ -77,7 +116,7 @@ const CourseDetail: React.FC = () => {
         );
     }
 
-    if (error) {
+    if (error || !course) {
          return (
             <MainLayout>
                 <div className="flex justify-between items-center mb-6">
@@ -86,177 +125,152 @@ const CourseDetail: React.FC = () => {
                     </Button>
                 </div>
                 <div className="p-8 text-center text-red-600 bg-red-100 rounded-xl shadow-lg border border-red-300">
-                    Lỗi tải dữ liệu: {error}
-                </div>
-            </MainLayout>
-        );
-    }
-    
-    if (!course) {
-        return (
-            <MainLayout>
-                <div className="flex justify-between items-center mb-6">
-                    <Button variant="secondary" onClick={() => window.history.back()}>
-                        <ArrowLeft className="w-5 h-5 mr-2" /> Quay lại
-                    </Button>
-                </div>
-                <div className="p-8 text-center text-red-600 bg-white rounded-xl shadow-lg">
-                    Không tìm thấy Khóa học {id}.
+                    {error ? `Lỗi: ${error}` : `Không tìm thấy khóa học với ID: ${id}`}
                 </div>
             </MainLayout>
         );
     }
 
-    // Determine status styling
-    const statusClass = course.CourseState === 'Đang mở' 
-        ? 'bg-green-100 text-green-800' 
-        : course.CourseState === 'Sắp ra mắt'
-        ? 'bg-yellow-100 text-yellow-800'
-        : 'bg-red-100 text-red-800';
+    const teacherName = course.teacher?.user?.fullName || 'Chưa cập nhật';
+    const teacherEmail = course.teacher?.user?.email || '';
 
     return (
         <MainLayout>
+            {/* Header */}
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-4xl font-extrabold text-gray-900 leading-tight">
-                    {course.CourseName} 
+                <h1 className="text-3xl font-extrabold text-gray-900 leading-tight w-2/3">
+                    {course.courseName}
                 </h1>
                 <Button variant="secondary" onClick={() => window.history.back()}>
                     <ArrowLeft className="w-5 h-5 mr-2" /> Quay lại danh sách
                 </Button>
             </div>
 
-            <div className="space-y-8 pb-12"> 
+            <div className="space-y-8 pb-12">
                 
-                {/* 1. THÔNG TIN CHUNG & TRẠNG THÁI */}
-                <div className="bg-white p-8 rounded-2xl shadow-xl border-l-8 border-blue-600">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-6 text-gray-700">
-                        <p><span className="font-semibold text-gray-800">Mã khóa học:</span> {course.CourseID}</p>
-                        <p><span className="font-semibold text-gray-800">Giảng viên:</span> {teacherName} ({course.TeacherID})</p>
+                {/* 1. THÔNG TIN CHUNG */}
+                <div className="bg-white p-6 rounded-xl shadow-md border-l-4 border-blue-600">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
+                        <p><span className="font-semibold">Mã khóa học:</span> {course.courseID}</p>
                         <p>
-                            <span className="font-semibold text-gray-800">Trạng thái:</span> 
-                            <span className={`inline-flex items-center px-4 py-1 rounded-full text-sm font-semibold ml-3 ${statusClass}`}>
-                                {course.CourseState}
+                            <span className="font-semibold">Trạng thái:</span> 
+                            <span className={`ml-2 px-3 py-1 rounded-full text-xs font-bold ${
+                                course.courseState === 'Đang mở' ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-800'
+                            }`}>
+                                {course.courseState}
                             </span>
                         </p>
+                        <p><span className="font-semibold">Giảng viên:</span> {teacherName}</p>
+                        <p><span className="font-semibold">Email GV:</span> {teacherEmail}</p>
                     </div>
-                     {descriptionMock && (
-                        <div className="mt-6 pt-4 border-t border-gray-100">
-                            <p className="text-base text-gray-600 leading-relaxed">
-                                <span className="font-semibold text-gray-800">Mô tả (Mock): </span>
-                                {descriptionMock}
-                            </p>
-                        </div>
-                    )}
                 </div>
 
-                {/* 2. TỔNG QUAN KHÓA HỌC (Sử dụng DetailSection) */}
-                <DetailSection title="Tổng quan Khóa học">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <StatCardDetailed 
-                            icon={<User className="w-6 h-6" />} 
-                            title="Học viên đã đăng ký" 
-                            value={course.NumStudents.toLocaleString()} 
-                            iconBgColor="bg-green-100" 
-                            iconColor="text-green-600" 
-                        />
-                        <StatCardDetailed 
-                            icon={<Star className="w-6 h-6" />} 
-                            title="Đánh giá trung bình" 
-                            value={`${course.AverageRating.toFixed(1)}/5.0`} 
-                            description={`(${course.NumRatings} lượt đánh giá)`}
-                            iconBgColor="bg-yellow-100" 
-                            iconColor="text-yellow-600" 
-                        />
+                {/* 2. THỐNG KÊ (STATS) - Có tương tác click */}
+                <DetailSection title="Thống kê tổng quan">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {/* Card Học viên -> Click mở Modal Enrollment */}
+                        <div onClick={() => setIsEnrollmentModalOpen(true)} className="cursor-pointer transition-transform hover:scale-105">
+                            <StatCardDetailed 
+                                icon={<User className="w-6 h-6" />} 
+                                title="Học viên" 
+                                value={course.numStudents} 
+                                iconBgColor="bg-green-100" 
+                                iconColor="text-green-600" 
+                            />
+                        </div>
+
+                        {/* Card Đánh giá -> Click mở Modal Rating */}
+                        <div onClick={() => setIsRatingModalOpen(true)} className="cursor-pointer transition-transform hover:scale-105">
+                            <StatCardDetailed 
+                                icon={<Star className="w-6 h-6" />} 
+                                title="Đánh giá" 
+                                value={`${course.averageRating.toFixed(1)} / 5`} 
+                                description={`(${course.numRatings} lượt)`}
+                                iconBgColor="bg-yellow-100" 
+                                iconColor="text-yellow-600" 
+                            />
+                        </div>
+
                         <StatCardDetailed 
                             icon={<Clock className="w-6 h-6" />} 
-                            title="Tổng thời lượng" 
-                            value={`${course.TotalDuration} giờ`} 
+                            title="Thời lượng" 
+                            value={`${course.totalDuration} giờ`} 
                             iconBgColor="bg-blue-100" 
                             iconColor="text-blue-600" 
                         />
                         <StatCardDetailed 
-                            icon={<Award className="w-6 h-6" />} 
-                            title="Chứng chỉ đã cấp (Mock)" 
-                            value={numCertificatesMock.toLocaleString()} 
+                            icon={<MessageSquare className="w-6 h-6" />} 
+                            title="Chương học" 
+                            value={course.chapters?.length || 0} 
                             iconBgColor="bg-purple-100" 
                             iconColor="text-purple-600" 
                         />
                     </div>
                 </DetailSection>
 
-                {/* 3. THÀNH PHẦN NỘI DUNG (Sử dụng DetailSection) */}
-                <DetailSection title="Thành phần Nội dung" borderTop={true}>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-                        <StatCardDetailed 
-                            icon={<FileText className="w-6 h-6" />} 
-                            title="Bài học lý thuyết" 
-                            value={course.NumTheoryLessons} 
-                            iconBgColor="bg-gray-100" 
-                            iconColor="text-gray-600" 
-                        />
-                        <StatCardDetailed 
-                            icon={<ListChecks className="w-6 h-6" />} 
-                            title="Bài tập thực hành" 
-                            value={course.NumExercises} 
-                            iconBgColor="bg-orange-100" 
-                            iconColor="text-orange-600" 
-                        />
-                        <StatCardDetailed 
-                            icon={<Video className="w-6 h-6" />} 
-                            title="Video bài giảng" 
-                            value={course.NumVideos} 
-                            iconBgColor="bg-red-100" 
-                            iconColor="text-red-600" 
-                        />
-                        <StatCardDetailed 
-                            icon={<FileText className="w-6 h-6" />} 
-                            title="Bài kiểm tra" 
-                            value={course.NumTests} 
-                            iconBgColor="bg-cyan-100" 
-                            iconColor="text-cyan-600" 
-                        />
-                         <StatCardDetailed 
-                            icon={<MessageSquare className="w-6 h-6" />} 
-                            title="Thảo luận (Mock)" 
-                            value={numDiscussionsMock} 
-                            iconBgColor="bg-indigo-100" 
-                            iconColor="text-indigo-600" 
-                        />
+                {/* 3. THÀNH PHẦN NỘI DUNG */}
+                <DetailSection title="Nội dung chi tiết" borderTop>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <StatCardDetailed icon={<FileText className="w-5 h-5"/>} title="Lý thuyết" value={course.numTheoryLessons} iconBgColor="bg-gray-100" iconColor="text-gray-600"/>
+                        <StatCardDetailed icon={<Video className="w-5 h-5"/>} title="Video" value={course.numVideos} iconBgColor="bg-red-100" iconColor="text-red-600"/>
+                        <StatCardDetailed icon={<ListChecks className="w-5 h-5"/>} title="Bài tập" value={course.numExercises} iconBgColor="bg-orange-100" iconColor="text-orange-600"/>
+                        <StatCardDetailed icon={<FileText className="w-5 h-5"/>} title="Bài kiểm tra" value={course.numTests} iconBgColor="bg-cyan-100" iconColor="text-cyan-600"/>
                     </div>
                 </DetailSection>
 
-                {/* 4. CHI TIẾT CÁC CHƯƠNG HỌC (Sử dụng DetailSection) */}
-                <DetailSection title={`Cấu trúc Khóa học (${course.Chapters?.length || 0} Chương)`} borderTop={true}>
-                    <div className="bg-white rounded-2xl shadow-xl divide-y divide-gray-100">
-                        {course.Chapters && course.Chapters.length > 0 ? (
-                            course.Chapters.map((chapter) => (
-                                <div key={chapter.ChapterID} className="p-5 hover:bg-blue-50 transition-colors duration-200 flex justify-between items-center group">
+                {/* 4. DANH SÁCH CHƯƠNG (CHAPTERS) */}
+                <DetailSection title="Danh sách các Chương" borderTop>
+                    <div className="bg-white rounded-xl shadow border border-gray-100 divide-y divide-gray-100">
+                        {course.chapters && course.chapters.length > 0 ? (
+                            course.chapters.map((chap) => (
+                                <div key={chap.chapterID} className="p-4 hover:bg-gray-50 flex justify-between items-center transition-colors">
                                     <div>
-                                        <p className="text-xl font-semibold text-gray-800 flex items-center">
-                                            <BookOpen className="w-5 h-5 mr-3 text-blue-500 flex-shrink-0" />
-                                            Chương {chapter.ChapterOrder}: {chapter.ChapterTitle}
-                                        </p>
-                                        <p className="text-sm text-gray-600 mt-1 ml-8">
-                                            Nội dung: {chapter.TheoryLessons?.length || 0} Lý thuyết, {chapter.VideoLessons?.length || 0} Video, {chapter.Exercises?.length || 0} Bài tập, {chapter.Tests?.length || 0} Bài kiểm tra
-                                        </p>
-                                        {chapter.ChapterDescription && (
-                                            <p className="text-sm text-gray-500 mt-1 ml-8 italic">
-                                                {chapter.ChapterDescription}
-                                            </p>
+                                        <h4 className="text-lg font-semibold text-gray-800 flex items-center">
+                                            <BookOpen className="w-4 h-4 mr-2 text-blue-500"/>
+                                            Chương {chap.chapterOrder}: {chap.chapterTitle}
+                                        </h4>
+                                        {chap.chapterDescription && (
+                                            <p className="text-sm text-gray-500 mt-1 ml-6">{chap.chapterDescription}</p>
                                         )}
                                     </div>
-                                    <Button size="sm" variant="secondary" className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                        Xem chi tiết
-                                    </Button>
                                 </div>
                             ))
                         ) : (
-                            <p className="p-5 text-gray-500 italic">Khóa học này chưa có chương nào được thêm vào.</p>
+                            <div className="p-6 text-center text-gray-500 italic">Chưa có chương nào được tạo.</div>
                         )}
                     </div>
                 </DetailSection>
+
             </div>
+
+            {/* --- MODALS --- */}
+            
+            {/* Modal Danh sách Học viên */}
+            <Modal 
+                isOpen={isEnrollmentModalOpen} 
+                onClose={() => setIsEnrollmentModalOpen(false)} 
+                title={`Danh sách Học viên (${course.numStudents})`}
+            >
+                <EnrollmentList />
+                <div className="mt-4 flex justify-end">
+                    <Button variant="secondary" onClick={() => setIsEnrollmentModalOpen(false)}>Đóng</Button>
+                </div>
+            </Modal>
+
+            {/* Modal Danh sách Đánh giá */}
+            <Modal 
+                isOpen={isRatingModalOpen} 
+                onClose={() => setIsRatingModalOpen(false)} 
+                title={`Danh sách Đánh giá (${course.numRatings})`}
+            >
+                <RatingList />
+                <div className="mt-4 flex justify-end">
+                    <Button variant="secondary" onClick={() => setIsRatingModalOpen(false)}>Đóng</Button>
+                </div>
+            </Modal>
+
         </MainLayout>
     );
 };
+
 export default CourseDetail;
