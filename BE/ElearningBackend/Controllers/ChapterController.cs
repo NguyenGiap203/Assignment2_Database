@@ -75,8 +75,9 @@ namespace ElearningBackend.Controllers
                 if (course == null)
                     return BadRequest(new { message = "Course not found" });
 
-                // Generate new ID
+                // Generate new ID: CHAP + 6 digits (total 10 chars)
                 var maxId = await _context.Chapters
+                    .Where(ch => ch.ChapterID.StartsWith("CHAP"))
                     .Select(ch => ch.ChapterID)
                     .ToListAsync();
 
@@ -84,15 +85,14 @@ namespace ElearningBackend.Controllers
                 if (maxId.Any())
                 {
                     var numbers = maxId
-                        .Where(id => id.StartsWith("CHP"))
-                        .Select(id => int.TryParse(id.Substring(3), out int num) ? num : 0)
+                        .Select(id => int.TryParse(id.Substring(4), out int num) ? num : 0)
                         .Where(num => num > 0);
 
                     if (numbers.Any())
                         nextNumber = numbers.Max() + 1;
                 }
 
-                var newId = $"CHP{nextNumber:D7}";
+                var newId = $"CHAP{nextNumber:D6}";
 
                 var chapter = new Chapter
                 {
@@ -148,10 +148,38 @@ namespace ElearningBackend.Controllers
                 if (chapter == null)
                     return NotFound(new { message = "Chapter not found" });
 
+                // Xóa cascade: Xóa tất cả content của chapter trước
+                // 1. Xóa VideoLessons
+                var videos = await _context.VideoLessons.Where(v => v.ChapterID == id).ToListAsync();
+                _context.VideoLessons.RemoveRange(videos);
+
+                // 2. Xóa TheoryLessons
+                var theories = await _context.TheoryLessons.Where(t => t.ChapterID == id).ToListAsync();
+                _context.TheoryLessons.RemoveRange(theories);
+
+                // 3. Xóa Exercises
+                var exercises = await _context.Exercises.Where(e => e.ChapterID == id).ToListAsync();
+                _context.Exercises.RemoveRange(exercises);
+
+                // 4. Xóa Tests (và Questions, Answers)
+                var tests = await _context.Tests.Where(t => t.ChapterID == id).ToListAsync();
+                foreach (var test in tests)
+                {
+                    // Xóa Answers trước
+                    var answers = await _context.Answers.Where(a => a.TestID == test.TestID).ToListAsync();
+                    _context.Answers.RemoveRange(answers);
+
+                    // Xóa Questions
+                    var questions = await _context.Questions.Where(q => q.TestID == test.TestID).ToListAsync();
+                    _context.Questions.RemoveRange(questions);
+                }
+                _context.Tests.RemoveRange(tests);
+
+                // 5. Cuối cùng xóa Chapter
                 _context.Chapters.Remove(chapter);
                 await _context.SaveChangesAsync();
 
-                return Ok(new { message = "Chapter deleted successfully" });
+                return Ok(new { message = "Chapter and all related content deleted successfully" });
             }
             catch (Exception ex)
             {

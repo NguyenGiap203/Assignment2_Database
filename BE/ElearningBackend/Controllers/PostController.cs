@@ -111,8 +111,9 @@ public class PostController : ControllerBase
             if (author == null)
                 return BadRequest(new { message = "User not found" });
 
-            // Generate new ID
+            // Generate new ID: POS + 7 digits (total 10 chars)
             var maxId = await _context.Posts
+                .Where(p => p.PostID.StartsWith("POS"))
                 .Select(p => p.PostID)
                 .ToListAsync();
 
@@ -120,7 +121,6 @@ public class PostController : ControllerBase
             if (maxId.Any())
             {
                 var numbers = maxId
-                    .Where(id => id.StartsWith("PST"))
                     .Select(id => int.TryParse(id.Substring(3), out int num) ? num : 0)
                     .Where(num => num > 0);
 
@@ -128,7 +128,7 @@ public class PostController : ControllerBase
                     nextNumber = numbers.Max() + 1;
             }
 
-            var newId = $"PST{nextNumber:D4}";
+            var newId = $"POS{nextNumber:D7}";
 
             var post = new Post
             {

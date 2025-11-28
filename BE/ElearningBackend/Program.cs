@@ -41,7 +41,7 @@ if (app.Environment.IsDevelopment())
 //     SeedData.SeedPosts(context);
 // }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection(); // Disabled - using HTTP only
 app.UseCors("AllowAll");
 
 app.UseAuthorization();
