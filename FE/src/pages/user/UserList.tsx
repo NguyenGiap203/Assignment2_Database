@@ -1,6 +1,6 @@
 // src/pages/user/UserList.tsx
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import MainLayout from '../../components/layout/MainLayout';
 import Table, { Column } from '../../components/ui/Table';
 import Button from '../../components/ui/Button';
@@ -9,9 +9,10 @@ import Pagination from '../../components/ui/Pagination';
 import Modal from '../../components/ui/Modal'; 
 import UserForm from '../../components/forms/UserForm'; 
 import { useFetch } from '../../hooks/useFetch';
-import { Search, UserPlus, Trash2, Eye } from 'lucide-react';
+import { Search, UserPlus, Trash2, Eye, Loader2 } from 'lucide-react';
 import { formatDate } from '../../utils/format';
 import { useNavigate } from 'react-router-dom';
+import axiosClient from '../../api/axiosClient'; // Import axiosClient
 
 // FIX: Interface User đầy đủ (đã sửa lỗi TS2322)
 interface User {
@@ -20,7 +21,7 @@ interface User {
   AccountPassword?: string;
   FullName: string;
   Email: string;
-  Role: 'Admin' | 'Teacher' | 'Student';
+  Role: 'Admin' | 'Teacher' | 'Student' | string; // Cho phép string Role từ BE
   AccountState: boolean;
   EnrollmentDate: string; 
   PhoneNumber?: string; 
@@ -37,27 +38,54 @@ const UserList: React.FC = () => {
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const { data: users, isLoading, error, totalItems, totalPages } = useFetch<User[]>('/api/users'); 
+  // FIX: Sử dụng useFetch thực tế. Thêm key để refetch
+  const [refetchKey, setRefetchKey] = useState(0);
+  const { data: users, isLoading, error } = useFetch<User[]>(`/UserTable?refetch=${refetchKey}`); 
+  const totalItems = users?.length || 0;
+  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
 
-  const handleCreateUser = (formData: User) => {
-    console.log('Tạo mới người dùng:', formData);
+  // Lọc client-side (vì BE không hỗ trợ phân trang)
+  const paginatedUsers = useMemo(() => {
+    if (!users) return [];
+    const start = (currentPage - 1) * itemsPerPage;
+    return users.slice(start, start + itemsPerPage);
+  }, [users, currentPage, itemsPerPage]);
+
+  const handleCreateUser = useCallback(async (formData: User) => {
     setIsSubmitting(true);
-    setTimeout(() => {
-        alert(`Tạo mới thành công User: ${formData.FullName}! (Mocked)`);
-        setIsSubmitting(false);
+    try {
+        // FIX: Gọi API Create User
+        await axiosClient.post('/UserTable', {
+            ...formData,
+            // BE yêu cầu EnrollmentDate là DateTime (hoặc Date string)
+            EnrollmentDate: new Date().toISOString().split('T')[0], 
+            // Giả lập mật khẩu nếu tạo mới (Form đã đảm bảo có)
+            AccountPassword: formData.AccountPassword || 'default_pw_hash' 
+        }); 
+        alert(`Tạo mới thành công User: ${formData.FullName}!`);
         setIsModalOpen(false);
-    }, 1500);
-  };
-
-  const handleDelete = (user: User) => {
-    setIsSubmitting(true);
-    console.log('Xóa người dùng:', user.UserID);
-    setTimeout(() => {
-        alert(`Xóa thành công User: ${user.FullName} (Mocked)`);
+        setRefetchKey(prev => prev + 1); // Kích hoạt fetch lại
+    } catch (err: any) {
+        alert(`Lỗi tạo mới: ${err.response?.data?.message || err.message}`);
+    } finally {
         setIsSubmitting(false);
+    }
+  }, []);
+
+  const handleDelete = useCallback(async (user: User) => {
+    setIsSubmitting(true);
+    try {
+        // FIX: Gọi API Delete User
+        await axiosClient.delete(`/UserTable/${user.UserID}`);
+        alert(`Xóa thành công User: ${user.FullName}`);
         setUserToDelete(null); 
-    }, 1000);
-  };
+        setRefetchKey(prev => prev + 1); // Kích hoạt fetch lại
+    } catch (err: any) {
+         alert(`Lỗi xóa: ${err.response?.data?.message || err.message}`);
+    } finally {
+        setIsSubmitting(false);
+    }
+  }, []);
 
 
   const userColumns: Column<User>[] = [
@@ -128,13 +156,12 @@ const UserList: React.FC = () => {
         </Button>
       </div>
 
-      {isLoading && <div className="p-6 text-center text-blue-600">Đang tải dữ liệu...</div>}
+      {isLoading && <div className="p-6 text-center text-blue-600 flex justify-center items-center"><Loader2 className="w-6 h-6 animate-spin mr-2" />Đang tải dữ liệu...</div>}
       {error && <div className="p-6 text-center text-red-600">Lỗi: {error}</div>}
 
       {!isLoading && users && (
         <>
-          {/* FIX: Bỏ Generic Type và ép kiểu cứng. Dùng cú pháp đơn giản nhất */}
-          <Table<User> data={users} columns={userColumns} />
+          <Table<User> data={paginatedUsers} columns={userColumns} />
 
           <Pagination
             currentPage={currentPage}
@@ -152,6 +179,7 @@ const UserList: React.FC = () => {
         onClose={() => setIsModalOpen(false)} 
         title="Tạo Người dùng mới"
       >
+        {/* Pass AccountPassword cho Form khi tạo mới */}
         <UserForm onSubmit={handleCreateUser} onCancel={() => setIsModalOpen(false)} isSubmitting={isSubmitting} />
       </Modal>
 

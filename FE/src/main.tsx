@@ -2,18 +2,19 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './app.tsx';
+import App from './app.tsx'; // Chú ý chữ thường/hoa tùy file thực tế của bạn
 import './index.css';
+import { AuthProvider } from './context/AuthContext'; // Import mới
 
-// Lấy element root trong index.html
 const rootElement = document.getElementById('root');
 
 if (rootElement) {
   ReactDOM.createRoot(rootElement).render(
-    <React.StrictMode>
-      {/* App.tsx là component gốc chứa Routing và Layout */}
-      <App />
-    </React.StrictMode>
+    // <React.StrictMode> // Có thể tạm tắt StrictMode nếu muốn debug dễ hơn (không bắt buộc)
+      <AuthProvider> {/* Bọc App trong AuthProvider */}
+        <App />
+      </AuthProvider>
+    // </React.StrictMode>
   );
 } else {
     console.error("Failed to find the root element.");

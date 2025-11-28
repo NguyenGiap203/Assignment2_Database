@@ -4,8 +4,8 @@
 import axios from 'axios';
 
 const axiosClient = axios.create({
-  // Thay thế bằng URL Backend thực tế khi có
-  baseURL: 'http://localhost:8080/api', 
+  // FIX: Thay thế bằng URL Backend thực tế theo BE/README_API_INTEGRATION.md
+  baseURL: 'http://localhost:5185/api', 
   headers: {
     'Content-Type': 'application/json',
   },
@@ -15,7 +15,8 @@ const axiosClient = axios.create({
 axiosClient.interceptors.request.use(config => {
   const token = localStorage.getItem('authToken');
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    // FIX: Thêm Authorization Header theo định dạng Bearer
+    config.headers.Authorization = `Bearer ${token}`; 
   }
   return config;
 });
@@ -26,7 +27,9 @@ axiosClient.interceptors.response.use(
     // Xử lý lỗi 401 (Unauthorized)
     if (error.response && error.response.status === 401) {
       console.error('Unauthorized, redirecting to login...');
-      // window.location.href = '/login'; 
+      // FIX: Xóa token và chuyển hướng khi nhận 401
+      localStorage.removeItem('authToken'); 
+      window.location.href = '/login'; 
     }
     return Promise.reject(error);
   }
