@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Chỉnh sửa Khóa học</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/navbar.css">
+</head>
+<body>
+
+<div id="navbar"></div>
+
+<div class="container">
+    <h2 id="cf_title">Chỉnh sửa Khóa học</h2>
+
+    <div class="form-grid">
+
+        <div>
+            <label>ID</label>
+            <input id="c_id" readonly>
+        </div>
+
+        <div class="form-full">
+            <label>Tiêu đề</label>
+            <input id="c_title" readonly>
+        </div>
+
+        <div class="form-full">
+            <label>Mô tả</label>
+            <textarea id="c_description" rows="3" readonly></textarea>
+        </div>
+
+        <div>
+            <label>Bài tập</label>
+            <input id="c_numExercises" readonly>
+        </div>
+
+        <div>
+            <label>Video</label>
+            <input id="c_numVideos" readonly>
+        </div>
+
+        <div>
+            <label>Thời lượng (giờ)</label>
+            <input id="c_totalDuration" readonly>
+        </div>
+
+        <div>
+            <label>Người tham gia</label>
+            <input id="c_participants" readonly>
+        </div>
+
+        <div>
+            <label>Điểm Trung bình</label>
+            <input id="c_rating" readonly>
+        </div>
+
+        <div>
+            <label>Trạng thái</label>
+            <select id="c_status">
+                <option value="active">active</option>
+                <option value="close">close</option>
+            </select>
+        </div>
+
+    </div>
+
+    <div style="margin-top:12px;">
+      <button onclick="saveCourse()">Lưu</button>
+      <button class="secondary" onclick="location.href='course-list.html'">Hủy</button>
+      <p id="c_msg" class="note"></p>
+    </div>
+</div>
+
+<script src="../js/db.js"></script>
+<script src="../js/navbar.js"></script>
+<script src="../js/course.js"></script>
+</body>
+</html>
