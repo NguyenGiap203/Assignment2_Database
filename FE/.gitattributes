@@ -1,0 +1,4 @@
+# Bỏ qua mọi thao tác chuyển đổi kết thúc dòng trong thư mục node_modules
+node_modules/** -text
+# Đảm bảo các file khác (code của bạn) vẫn được xử lý đúng chuẩn Windows
+* text=auto
