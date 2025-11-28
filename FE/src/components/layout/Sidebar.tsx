@@ -56,7 +56,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
         text-2xl font-extrabold text-blue-600 mb-8 px-2 overflow-hidden whitespace-nowrap 
         ${!isOpen ? 'hidden sm:block text-center' : 'block'}
       `}>
-        {isOpen ? 'LMS Admin' : 'LMS'}
+        {isOpen ? 'Elearning' : 'E'}
       </div>
       
       {/* Menu */}

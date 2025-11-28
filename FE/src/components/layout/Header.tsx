@@ -30,7 +30,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           <Menu className="w-6 h-6" />
         </button>
         <h1 className="text-xl font-bold text-gray-800 hidden md:block">
-          LMS Admin Portal
+          Elearning System for Admin
         </h1>
       </div>
 

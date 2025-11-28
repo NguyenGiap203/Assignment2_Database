@@ -1,6 +1,6 @@
 // src/pages/user/UserList.tsx
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import MainLayout from '../../components/layout/MainLayout';
 import Table, { Column } from '../../components/ui/Table';
 import Button from '../../components/ui/Button';
@@ -12,59 +12,88 @@ import { useFetch } from '../../hooks/useFetch';
 import { Search, UserPlus, Trash2, Eye, Loader2 } from 'lucide-react';
 import { formatDate } from '../../utils/format';
 import { useNavigate } from 'react-router-dom';
-import axiosClient from '../../api/axiosClient'; // Import axiosClient
+import axiosClient from '../../api/axiosClient';
 
-// FIX: Interface User đầy đủ (đã sửa lỗi TS2322)
+// Interface User (camelCase để khớp với Backend)
 interface User {
-  UserID: string;
-  AccountName: string; // Thêm AccountName
-  AccountPassword?: string;
-  FullName: string;
-  Email: string;
-  Role: 'Admin' | 'Teacher' | 'Student' | string; // Cho phép string Role từ BE
-  AccountState: boolean;
-  EnrollmentDate: string; 
-  PhoneNumber?: string; 
-  Nation?: string; // Thêm Nation (optional)
-  Province?: string; // Thêm Province (optional)
-  Ward?: string; // Thêm Ward (optional)
+  userID: string;
+  accountName: string;
+  accountPassword?: string;
+  fullName: string;
+  email: string;
+  role: string;
+  accountState: boolean;
+  enrollmentDate: string; 
+  phoneNumber?: string; 
+  nation?: string; 
+  province?: string; 
+  ward?: string; 
 }
+
+type UserSortKey = 'fullName' | 'email' | 'enrollmentDate' | 'accountName';
 
 const UserList: React.FC = () => {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // FIX: Sử dụng useFetch thực tế. Thêm key để refetch
-  const [refetchKey, setRefetchKey] = useState(0);
-  const { data: users, isLoading, error } = useFetch<User[]>(`/UserTable?refetch=${refetchKey}`); 
-  const totalItems = users?.length || 0;
-  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+  const [sortKey, setSortKey] = useState<UserSortKey>('fullName');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [refetchKey, setRefetchKey] = useState(0); 
 
-  // Lọc client-side (vì BE không hỗ trợ phân trang)
-  const paginatedUsers = useMemo(() => {
-    if (!users) return [];
+  // URL Fetch Data
+  const fetchUrl = useMemo(() => {
+      const beSortKey = (key: UserSortKey) => {
+          switch(key) {
+              case 'fullName': return 'name';
+              case 'email': return 'email';
+              case 'enrollmentDate': return 'date';
+              case 'accountName': return 'account';
+              default: return 'name';
+          }
+      }
+      return `/UserTable?sortBy=${beSortKey(sortKey)}&sortOrder=${sortDirection}&refetch=${refetchKey}`;
+  }, [sortKey, sortDirection, refetchKey]);
+
+  const { data: fetchedUsers, isLoading, error } = useFetch<User[]>(fetchUrl); 
+
+  const { paginatedUsers, totalItems, totalPages } = useMemo(() => {
+    let filtered = fetchedUsers || [];
+
+    if (searchTerm) {
+        const lowerCaseSearch = searchTerm.toLowerCase();
+        filtered = filtered.filter(user => 
+            user.fullName.toLowerCase().includes(lowerCaseSearch) ||
+            user.email.toLowerCase().includes(lowerCaseSearch) ||
+            user.accountName.toLowerCase().includes(lowerCaseSearch)
+        );
+    }
+    
+    const totalItems = filtered.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
     const start = (currentPage - 1) * itemsPerPage;
-    return users.slice(start, start + itemsPerPage);
-  }, [users, currentPage, itemsPerPage]);
+    const paginatedUsers = filtered.slice(start, start + itemsPerPage);
+    
+    return { paginatedUsers, totalItems, totalPages };
+  }, [fetchedUsers, searchTerm, currentPage, itemsPerPage]);
 
+  // --- HÀM TẠO MỚI (POST) ---
   const handleCreateUser = useCallback(async (formData: User) => {
     setIsSubmitting(true);
     try {
-        // FIX: Gọi API Create User
         await axiosClient.post('/UserTable', {
             ...formData,
-            // BE yêu cầu EnrollmentDate là DateTime (hoặc Date string)
             EnrollmentDate: new Date().toISOString().split('T')[0], 
-            // Giả lập mật khẩu nếu tạo mới (Form đã đảm bảo có)
-            AccountPassword: formData.AccountPassword || 'default_pw_hash' 
+            AccountPassword: formData.accountPassword || 'default@123' 
         }); 
-        alert(`Tạo mới thành công User: ${formData.FullName}!`);
+        alert(`Tạo mới thành công User: ${formData.fullName}!`);
         setIsModalOpen(false);
-        setRefetchKey(prev => prev + 1); // Kích hoạt fetch lại
+        setRefetchKey(prev => prev + 1); 
     } catch (err: any) {
         alert(`Lỗi tạo mới: ${err.response?.data?.message || err.message}`);
     } finally {
@@ -72,58 +101,81 @@ const UserList: React.FC = () => {
     }
   }, []);
 
+  // --- HÀM XÓA (DELETE) ---
+  // Hàm này được gọi khi bấm nút "Xác nhận Xóa" trong Modal
   const handleDelete = useCallback(async (user: User) => {
     setIsSubmitting(true);
     try {
-        // FIX: Gọi API Delete User
-        await axiosClient.delete(`/UserTable/${user.UserID}`);
-        alert(`Xóa thành công User: ${user.FullName}`);
-        setUserToDelete(null); 
-        setRefetchKey(prev => prev + 1); // Kích hoạt fetch lại
+        // Log ID để kiểm tra xem có đúng ID không
+        console.log("Deleting User ID:", user.userID); 
+
+        if (!user.userID) throw new Error("User ID is missing!");
+
+        await axiosClient.delete(`/UserTable/${user.userID}`);
+        
+        alert(`Đã xóa thành công User: ${user.fullName}`);
+        setUserToDelete(null); // Đóng modal
+        setRefetchKey(prev => prev + 1); // Refresh list
     } catch (err: any) {
+         console.error("Delete Error:", err);
          alert(`Lỗi xóa: ${err.response?.data?.message || err.message}`);
     } finally {
         setIsSubmitting(false);
     }
   }, []);
+  
+  const handleTableSort = useCallback((key: keyof User) => {
+      if (['fullName', 'email', 'enrollmentDate', 'accountName'].includes(key as string)) {
+        if (sortKey === key) {
+            setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortKey(key as UserSortKey);
+            setSortDirection('asc');
+        }
+      }
+  }, [sortKey]);
 
-
+  // --- CẤU HÌNH CỘT VÀ NÚT BẤM ---
   const userColumns: Column<User>[] = [
-    { key: 'UserID', header: 'ID' },
-    { key: 'AccountName', header: 'Tên TK' },
-    { key: 'FullName', header: 'Họ Tên', sortable: true },
-    { key: 'Email', header: 'Email' },
-    { key: 'Role', header: 'Vai trò', sortable: true },
+    { key: 'userID', header: 'ID', sortable: false },
+    { key: 'accountName', header: 'Tên TK', sortable: true }, 
+    { key: 'fullName', header: 'Họ Tên', sortable: true },
+    { key: 'email', header: 'Email', sortable: true },
+    { key: 'role', header: 'Vai trò', sortable: false },
     { 
-      key: 'AccountState', 
+      key: 'accountState', 
       header: 'Trạng thái',
       render: (user) => (
-        <span className={`inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium ${
-          user.AccountState 
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+          user.accountState 
             ? 'bg-green-100 text-green-800' 
             : 'bg-red-100 text-red-800'
         }`}>
-          {user.AccountState ? 'Active' : 'Bị Ban'}
+          {user.accountState ? 'Active' : 'Bị Ban'}
         </span>
       ),
     },
     { 
-      key: 'EnrollmentDate', 
+      key: 'enrollmentDate', 
       header: 'Ngày tham gia',
-      render: (user) => formatDate(user.EnrollmentDate), 
+      render: (user) => formatDate(user.enrollmentDate), 
+      sortable: true
     },
     { 
       key: 'actions', 
       header: 'Hành động',
       render: (user) => (
-        <div className="space-x-2 flex">
+        <div className="flex space-x-2">
+          {/* NÚT CHI TIẾT: Chuyển trang */}
           <Button 
             size="sm" 
             variant="secondary" 
-            onClick={() => navigate(`/users/${user.UserID}`)} 
+            onClick={() => navigate(`/users/${user.userID}`)} 
           >
             <Eye className="w-4 h-4 mr-1" /> Chi tiết
           </Button> 
+          
+          {/* NÚT XÓA: Mở Modal xác nhận (KHÔNG gọi API ngay) */}
           <Button 
             size="sm" 
             variant="danger" 
@@ -140,14 +192,15 @@ const UserList: React.FC = () => {
     <MainLayout>
       <h2 className="text-3xl font-bold text-gray-800 mb-6">Quản lý Người dùng</h2>
       
-      {/* Thanh công cụ */}
-      <div className="flex justify-between items-center mb-6 p-4 bg-white rounded-lg shadow-sm">
-        <div className="w-1/3">
+      <div className="flex justify-between items-center mb-6 p-4 bg-white rounded-lg shadow-sm border border-gray-100">
+        <div className="w-1/3 relative">
           <Input 
             type="text"
             placeholder="Tìm kiếm theo tên, email..."
-            icon={<Search className="w-5 h-5" />}
-            className="w-full"
+            icon={<Search className="w-5 h-5 text-gray-400" />}
+            className="w-full pl-10"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <Button variant="primary" onClick={() => setIsModalOpen(true)}> 
@@ -156,12 +209,28 @@ const UserList: React.FC = () => {
         </Button>
       </div>
 
-      {isLoading && <div className="p-6 text-center text-blue-600 flex justify-center items-center"><Loader2 className="w-6 h-6 animate-spin mr-2" />Đang tải dữ liệu...</div>}
-      {error && <div className="p-6 text-center text-red-600">Lỗi: {error}</div>}
+      {isLoading && (
+        <div className="p-12 text-center flex flex-col items-center justify-center text-blue-600">
+            <Loader2 className="w-8 h-8 animate-spin mb-2" />
+            <span>Đang tải dữ liệu...</span>
+        </div>
+      )}
+      
+      {error && (
+        <div className="p-6 text-center text-red-600 bg-red-50 rounded-lg border border-red-200">
+            Lỗi kết nối: {error}
+        </div>
+      )}
 
-      {!isLoading && users && (
+      {!isLoading && fetchedUsers && (
         <>
-          <Table<User> data={paginatedUsers} columns={userColumns} />
+          <Table<User> 
+            data={paginatedUsers} 
+            columns={userColumns}
+            onSort={handleTableSort}
+            sortKey={sortKey}
+            sortDirection={sortDirection}
+          />
 
           <Pagination
             currentPage={currentPage}
@@ -173,28 +242,42 @@ const UserList: React.FC = () => {
         </>
       )}
 
-      {/* MODAL: Thêm người dùng mới */}
+      {/* Modal Tạo mới */}
       <Modal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         title="Tạo Người dùng mới"
       >
-        {/* Pass AccountPassword cho Form khi tạo mới */}
-        <UserForm onSubmit={handleCreateUser} onCancel={() => setIsModalOpen(false)} isSubmitting={isSubmitting} />
+        <UserForm 
+            onSubmit={handleCreateUser} 
+            onCancel={() => setIsModalOpen(false)} 
+            isSubmitting={isSubmitting} 
+        />
       </Modal>
 
-      {/* MODAL: Xác nhận xóa người dùng */}
+      {/* Modal Xóa - QUAN TRỌNG: Nút này mới gọi API Xóa */}
       <Modal 
         isOpen={!!userToDelete} 
         onClose={() => setUserToDelete(null)} 
         title="Xác nhận Xóa"
       >
-        <p className="mb-4">Bạn có chắc chắn muốn xóa người dùng **{userToDelete?.FullName}** ({userToDelete?.UserID}) không? Hành động này không thể hoàn tác.</p>
-        <div className="flex justify-end space-x-3">
-            <Button variant="secondary" onClick={() => setUserToDelete(null)} disabled={isSubmitting}>Hủy</Button>
-            <Button variant="danger" isLoading={isSubmitting} onClick={() => userToDelete && handleDelete(userToDelete)}>
-                {isSubmitting ? 'Đang xóa...' : 'Xác nhận Xóa'}
-            </Button>
+        <div className="p-4">
+            <p className="mb-4 text-gray-700">
+                Bạn có chắc chắn muốn xóa người dùng <span className="font-bold">{userToDelete?.fullName}</span> ({userToDelete?.userID}) không? 
+                <br/>Hành động này không thể hoàn tác.
+            </p>
+            <div className="flex justify-end space-x-3 mt-6">
+                <Button variant="secondary" onClick={() => setUserToDelete(null)} disabled={isSubmitting}>Hủy</Button>
+                
+                {/* SỬA LẠI CHỖ NÀY: Gọi arrow function để truyền tham số userToDelete */}
+                <Button 
+                    variant="danger" 
+                    isLoading={isSubmitting} 
+                    onClick={() => userToDelete && handleDelete(userToDelete)}
+                >
+                    {isSubmitting ? 'Đang xóa...' : 'Xác nhận Xóa'}
+                </Button>
+            </div>
         </div>
       </Modal>
 

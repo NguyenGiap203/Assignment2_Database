@@ -1,29 +1,29 @@
-// pages/user/UserDetail.tsx (Đã cập nhật logic Update)
+// src/pages/user/UserDetail.tsx
 
 import React, { useState, useCallback } from 'react';
 import MainLayout from '../../components/layout/MainLayout';
 import Button from '../../components/ui/Button';
-import UserForm from '../../components/forms/UserForm'; // Import UserForm
+import UserForm from '../../components/forms/UserForm'; 
 import { ArrowLeft, Edit, Loader2 } from 'lucide-react';
 import { formatDate } from '../../utils/format'; 
 import { useParams } from 'react-router-dom';
-import { useFetch } from '../../hooks/useFetch'; // Import useFetch
-import axiosClient from '../../api/axiosClient'; // Import axiosClient
+import { useFetch } from '../../hooks/useFetch'; 
+import axiosClient from '../../api/axiosClient'; // 1. Import axiosClient
 
-// ... (Định nghĩa kiểu dữ liệu User nếu cần) - Đã đồng bộ với SQL
+// Interface User (camelCase)
 interface User {
-  UserID: string;
-  AccountName: string; // Thêm AccountName
-  AccountPassword?: string;
-  FullName: string;
-  Email: string;
-  Role: 'Admin' | 'Teacher' | 'Student' | string;
-  PhoneNumber?: string;
-  Nation?: string; 
-  Province?: string; 
-  Ward?: string; 
-  AccountState: boolean;
-  EnrollmentDate: string;
+  userID: string;
+  accountName: string;
+  accountPassword?: string;
+  fullName: string;
+  email: string;
+  role: string;
+  phoneNumber?: string;
+  nation?: string; 
+  province?: string; 
+  ward?: string; 
+  accountState: boolean;
+  enrollmentDate: string;
 }
 
 const UserDetail: React.FC = () => {
@@ -31,37 +31,43 @@ const UserDetail: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // FIX: Fetch data thực tế
-  const { data: user, isLoading, error, totalItems } = useFetch<User>(`/UserTable/${id}`);
+  // Dùng refetchKey để load lại dữ liệu sau khi update thành công
+  const [refetchKey, setRefetchKey] = useState(0);
+  const { data: user, isLoading, error } = useFetch<User>(`/UserTable/${id}?refetch=${refetchKey}`);
   const initialUser = user;
 
+  // --- HÀM CẬP NHẬT (UPDATE) ---
   const handleUpdate = useCallback(async (formData: User) => {
     setIsSubmitting(true);
     try {
-        // FIX: Gọi API Update User
-        // Loại bỏ các trường không cần thiết cho PUT (như ID, Role nếu không muốn cập nhật)
-        const updateData = {
-            AccountName: formData.AccountName,
-            FullName: formData.FullName,
-            Email: formData.Email,
-            PhoneNumber: formData.PhoneNumber,
-            Nation: formData.Nation,
-            Province: formData.Province,
-            Ward: formData.Ward,
-            AccountState: formData.AccountState,
-            EnrollmentDate: formData.EnrollmentDate, // Dữ liệu ngày tháng cần được giữ nguyên định dạng
+        // 2. Chuẩn bị dữ liệu gửi đi
+        // Backend ASP.NET Core thường không phân biệt hoa/thường (Case-insensitive)
+        // nhưng ta cần đảm bảo Password không bị rỗng để vượt qua validate [Required]
+        const updatePayload = {
+            ...formData,
+            // Logic xử lý Password:
+            // Nếu người dùng nhập pass mới trong form -> lấy formData.accountPassword
+            // Nếu không nhập (rỗng) -> lấy pass cũ từ initialUser hoặc gửi chuỗi "unchanged" để BE biết
+            accountPassword: formData.accountPassword || initialUser?.accountPassword || "unchanged" 
         };
         
-        await axiosClient.put(`/UserTable/${formData.UserID}`, updateData);
-        alert(`Cập nhật thành công User: ${formData.FullName}!`);
-        setIsEditing(false); // Quay lại chế độ xem
-        // Kích hoạt refetch dữ liệu (tự động vì useFetch phụ thuộc vào component state)
+        console.log("Sending Update Payload:", updatePayload);
+
+        // 3. Gọi API PUT
+        await axiosClient.put(`/UserTable/${formData.userID}`, updatePayload);
+        
+        alert(`Cập nhật thành công User: ${formData.fullName}!`);
+        setIsEditing(false); 
+        setRefetchKey(prev => prev + 1); // Load lại dữ liệu mới nhất từ server
     } catch (err: any) {
-        alert(`Lỗi cập nhật: ${err.response?.data?.message || err.message}`);
+        console.error("Update Error:", err);
+        // Hiển thị thông báo lỗi chi tiết từ Backend trả về
+        const message = err.response?.data?.message || err.response?.data?.title || "Lỗi không xác định";
+        alert(`Lỗi cập nhật: ${message}`);
     } finally {
         setIsSubmitting(false);
     }
-  }, []);
+  }, [initialUser]);
 
   if (isLoading) {
     return (
@@ -91,7 +97,7 @@ const UserDetail: React.FC = () => {
   return (
     <MainLayout>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Chi tiết Người dùng: {initialUser.UserID}</h1>
+        <h1 className="text-3xl font-bold text-gray-800">Chi tiết Người dùng: {initialUser.userID}</h1>
         <Button variant="secondary" onClick={() => window.history.back()}>
           <ArrowLeft className="w-5 h-5 mr-2" />
           Quay lại danh sách
@@ -107,23 +113,21 @@ const UserDetail: React.FC = () => {
               </Button>
             </div>
 
-            {/* Hiển thị chi tiết (View) */}
             <h2 className="text-2xl font-semibold border-b pb-2 mb-4">Thông tin cơ bản</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
-              <div><span className="font-medium">Họ tên:</span> {initialUser.FullName}</div>
-              <div><span className="font-medium">Tên tài khoản:</span> {initialUser.AccountName}</div>
-              <div><span className="font-medium">Email:</span> {initialUser.Email}</div>
-              <div><span className="font-medium">Vai trò (Mock):</span> {initialUser.Role}</div>
-              <div><span className="font-medium">Số điện thoại:</span> {initialUser.PhoneNumber || 'N/A'}</div>
-              <div><span className="font-medium">Quốc gia:</span> {initialUser.Nation || 'N/A'}</div>
-              <div><span className="font-medium">Tỉnh/TP:</span> {initialUser.Province || 'N/A'}</div>
-              <div><span className="font-medium">Phường/Xã:</span> {initialUser.Ward || 'N/A'}</div>
-              <div><span className="font-medium">Trạng thái:</span> {initialUser.AccountState ? 'Hoạt động' : 'Đã bị Ban'}</div>
-              <div><span className="font-medium">Ngày tham gia:</span> {formatDate(initialUser.EnrollmentDate)}</div>
+              <div><span className="font-medium">Họ tên:</span> {initialUser.fullName}</div>
+              <div><span className="font-medium">Tên tài khoản:</span> {initialUser.accountName}</div>
+              <div><span className="font-medium">Email:</span> {initialUser.email}</div>
+              <div><span className="font-medium">Vai trò:</span> {initialUser.role || 'N/A'}</div>
+              <div><span className="font-medium">Số điện thoại:</span> {initialUser.phoneNumber || 'N/A'}</div>
+              <div><span className="font-medium">Quốc gia:</span> {initialUser.nation || 'N/A'}</div>
+              <div><span className="font-medium">Tỉnh/TP:</span> {initialUser.province || 'N/A'}</div>
+              <div><span className="font-medium">Phường/Xã:</span> {initialUser.ward || 'N/A'}</div>
+              <div><span className="font-medium">Trạng thái:</span> {initialUser.accountState ? 'Hoạt động' : 'Đã bị Ban'}</div>
+              <div><span className="font-medium">Ngày tham gia:</span> {formatDate(initialUser.enrollmentDate)}</div>
             </div>
           </>
         ) : (
-          /* Chế độ Sửa (Update) */
           <UserForm 
             initialData={initialUser} 
             onSubmit={handleUpdate} 
