@@ -52,6 +52,27 @@ public class UserTableController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create(UserTable user)
     {
+        // Auto-generate UserID if not provided: US + 8 digits (total 10 chars)
+        if (string.IsNullOrEmpty(user.UserID))
+        {
+            var maxId = await _context.UserTable
+                .Where(u => u.UserID.StartsWith("US"))
+                .Select(u => u.UserID)
+                .ToListAsync();
+
+            int nextNumber = 1;
+            if (maxId.Any())
+            {
+                var numbers = maxId
+                    .Select(id => int.TryParse(id.Substring(2), out int num) ? num : 0)
+                    .Where(num => num > 0);
+                if (numbers.Any())
+                    nextNumber = numbers.Max() + 1;
+            }
+
+            user.UserID = $"US{nextNumber:D8}";
+        }
+
         _context.UserTable.Add(user);
         await _context.SaveChangesAsync();
         return Ok(user);
@@ -84,12 +105,59 @@ public class UserTableController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id)
     {
-        var user = await _context.UserTable.FindAsync(id);
-        if (user == null)
-            return NotFound();
+        try
+        {
+            var user = await _context.UserTable.FindAsync(id);
+            if (user == null)
+                return NotFound(new { message = "User not found" });
 
-        _context.UserTable.Remove(user);
-        await _context.SaveChangesAsync();
-        return Ok(new { message = "Deleted successfully" });
+            // Kiểm tra nếu user là Teacher thì không được xóa nếu có Courses
+            var isTeacher = await _context.Teachers.AnyAsync(t => t.TeacherID == id);
+            if (isTeacher)
+            {
+                var hasCourses = await _context.Courses.AnyAsync(c => c.TeacherID == id);
+                if (hasCourses)
+                {
+                    return BadRequest(new { message = "Cannot delete teacher who has courses. Delete courses first." });
+                }
+
+                // Xóa Teacher record
+                var teacher = await _context.Teachers.FindAsync(id);
+                if (teacher != null)
+                    _context.Teachers.Remove(teacher);
+            }
+
+            // Xóa các data liên quan của User
+            // 1. Posts của user
+            var posts = await _context.Posts.Where(p => p.UserID == id).ToListAsync();
+            foreach (var post in posts)
+            {
+                var postComments = await _context.Comments.Where(c => c.PostID == post.PostID).ToListAsync();
+                _context.Comments.RemoveRange(postComments);
+            }
+            _context.Posts.RemoveRange(posts);
+
+            // 2. Comments của user
+            var userComments = await _context.Comments.Where(c => c.UserID == id).ToListAsync();
+            _context.Comments.RemoveRange(userComments);
+
+            // 3. Enrollments
+            var enrollments = await _context.CourseEnrollments.Where(e => e.UserID == id).ToListAsync();
+            _context.CourseEnrollments.RemoveRange(enrollments);
+
+            // 4. Ratings
+            var ratings = await _context.CourseRatings.Where(r => r.UserID == id).ToListAsync();
+            _context.CourseRatings.RemoveRange(ratings);
+
+            // 5. Cuối cùng xóa User
+            _context.UserTable.Remove(user);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "User and all related data deleted successfully" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Error deleting user", error = ex.Message });
+        }
     }
 }

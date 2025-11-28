@@ -105,8 +105,9 @@ namespace ElearningBackend.Controllers
                 if (teacher == null)
                     return BadRequest(new { message = "Teacher not found" });
 
-                // Generate new ID
+                // Generate new ID: COU + 7 digits (total 10 chars)
                 var maxId = await _context.Courses
+                    .Where(c => c.CourseID.StartsWith("COU"))
                     .Select(c => c.CourseID)
                     .ToListAsync();
 
@@ -114,7 +115,6 @@ namespace ElearningBackend.Controllers
                 if (maxId.Any())
                 {
                     var numbers = maxId
-                        .Where(id => id.StartsWith("CRS"))
                         .Select(id => int.TryParse(id.Substring(3), out int num) ? num : 0)
                         .Where(num => num > 0);
 
@@ -122,7 +122,7 @@ namespace ElearningBackend.Controllers
                         nextNumber = numbers.Max() + 1;
                 }
 
-                var newId = $"CRS{nextNumber:D7}";
+                var newId = $"COU{nextNumber:D7}";
 
                 var course = new Course
                 {
@@ -195,10 +195,56 @@ namespace ElearningBackend.Controllers
                 if (course == null)
                     return NotFound(new { message = "Course not found" });
 
+                // Xóa cascade: Xóa tất cả data liên quan trước
+                // 1. Xóa Chapters và content của chapters
+                var chapters = await _context.Chapters.Where(c => c.CourseID == id).ToListAsync();
+                foreach (var chapter in chapters)
+                {
+                    // Xóa VideoLessons
+                    var videos = await _context.VideoLessons.Where(v => v.ChapterID == chapter.ChapterID).ToListAsync();
+                    _context.VideoLessons.RemoveRange(videos);
+
+                    // Xóa TheoryLessons
+                    var theories = await _context.TheoryLessons.Where(t => t.ChapterID == chapter.ChapterID).ToListAsync();
+                    _context.TheoryLessons.RemoveRange(theories);
+
+                    // Xóa Exercises
+                    var exercises = await _context.Exercises.Where(e => e.ChapterID == chapter.ChapterID).ToListAsync();
+                    _context.Exercises.RemoveRange(exercises);
+
+                    // Xóa Tests (và Questions, Answers của Tests)
+                    var tests = await _context.Tests.Where(t => t.ChapterID == chapter.ChapterID).ToListAsync();
+                    foreach (var test in tests)
+                    {
+                        // Xóa Answers trước
+                        var answers = await _context.Answers.Where(a => a.TestID == test.TestID).ToListAsync();
+                        _context.Answers.RemoveRange(answers);
+
+                        // Xóa Questions
+                        var questions = await _context.Questions.Where(q => q.TestID == test.TestID).ToListAsync();
+                        _context.Questions.RemoveRange(questions);
+                    }
+                    _context.Tests.RemoveRange(tests);
+                }
+                _context.Chapters.RemoveRange(chapters);
+
+                // 2. Xóa Enrollments
+                var enrollments = await _context.CourseEnrollments.Where(e => e.CourseID == id).ToListAsync();
+                _context.CourseEnrollments.RemoveRange(enrollments);
+
+                // 3. Xóa Ratings
+                var ratings = await _context.CourseRatings.Where(r => r.CourseID == id).ToListAsync();
+                _context.CourseRatings.RemoveRange(ratings);
+
+                // 4. Xóa Comments về Course
+                var comments = await _context.Comments.Where(c => c.CourseID == id).ToListAsync();
+                _context.Comments.RemoveRange(comments);
+
+                // 5. Cuối cùng xóa Course
                 _context.Courses.Remove(course);
                 await _context.SaveChangesAsync();
 
-                return Ok(new { message = "Course deleted successfully" });
+                return Ok(new { message = "Course and all related data deleted successfully" });
             }
             catch (Exception ex)
             {
