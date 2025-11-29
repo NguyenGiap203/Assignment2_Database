@@ -121,14 +121,14 @@ public class PostController : ControllerBase
             if (maxId.Any())
             {
                 var numbers = maxId
-                    .Select(id => int.TryParse(id.Substring(3), out int num) ? num : 0)
+                    .Select(id => int.TryParse(id.Substring(3).Trim(), out int num) ? num : 0)
                     .Where(num => num > 0);
 
                 if (numbers.Any())
                     nextNumber = numbers.Max() + 1;
             }
 
-            var newId = $"POS{nextNumber:D7}";
+            var newId = $"POS{nextNumber:D3}";
 
             var post = new Post
             {

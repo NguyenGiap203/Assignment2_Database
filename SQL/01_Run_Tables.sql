@@ -1,3 +1,5 @@
+USE ElearningDB;
+GO
 CREATE TABLE ANSWER (
     -- 1. Hai cột này đóng vai trò là KHÓA NGOẠI (tham chiếu về bảng Câu hỏi)
     TestID              CHAR(10)        NOT NULL,
@@ -96,7 +98,7 @@ CREATE TABLE EXERCISE_ATTEMPT (
     ExerciseID          CHAR(10)        NOT NULL,     -- Foreign Key
     StartTime           DATETIME        NOT NULL DEFAULT GETDATE(),
     SubmitTime          DATETIME,       
-    Score               DECIMAL(4, 2)   CHECK (Score >= 0 AND Score <= 100),
+    Score               DECIMAL(5, 2)   CHECK (Score >= 0 AND Score <= 100),
 
     -- Định nghĩa AttemptID làm KHÓA CHÍNH
     CONSTRAINT PK_ExerciseAttempt PRIMARY KEY (AttemptID),
@@ -193,7 +195,7 @@ CREATE TABLE TEST_ATTEMPT_RECORDS (
     
     StartTime           DATETIME        NOT NULL DEFAULT GETDATE(),
     SubmitTime          DATETIME,       -- NULL nếu chưa nộp
-    Score               DECIMAL(4, 2)   CHECK (Score >= 0), -- Điểm số
+    Score               DECIMAL(5, 2)   CHECK (Score >= 0 AND Score <= 100), -- Điểm số
     
     CONSTRAINT PK_TestAttempt PRIMARY KEY (TestAttemptID),
     

@@ -85,14 +85,14 @@ namespace ElearningBackend.Controllers
                 if (maxId.Any())
                 {
                     var numbers = maxId
-                        .Select(id => int.TryParse(id.Substring(4), out int num) ? num : 0)
+                        .Select(id => int.TryParse(id.Substring(4).Trim(), out int num) ? num : 0)
                         .Where(num => num > 0);
 
                     if (numbers.Any())
                         nextNumber = numbers.Max() + 1;
                 }
 
-                var newId = $"CHAP{nextNumber:D6}";
+                var newId = $"CHAP{nextNumber:D2}";
 
                 var chapter = new Chapter
                 {

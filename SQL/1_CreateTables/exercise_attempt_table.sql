@@ -13,7 +13,7 @@ CREATE TABLE EXERCISE_ATTEMPT (
     ExerciseID          CHAR(10)        NOT NULL,     -- Foreign Key
     StartTime           DATETIME        NOT NULL DEFAULT GETDATE(),
     SubmitTime          DATETIME,       
-    Score               DECIMAL(4, 2)   CHECK (Score >= 0 AND Score <= 100),
+    Score               DECIMAL(5, 2)   CHECK (Score >= 0 AND Score <= 100),
 
     -- Định nghĩa AttemptID làm KHÓA CHÍNH
     CONSTRAINT PK_ExerciseAttempt PRIMARY KEY (AttemptID),
@@ -21,8 +21,5 @@ CREATE TABLE EXERCISE_ATTEMPT (
     -- Ràng buộc logic
     CONSTRAINT CK_SubmitTime CHECK (SubmitTime >= StartTime)
 );
-
-ALTER TABLE EXERCISE_ATTEMPT
-ALTER COLUMN Score DECIMAL(5, 2);
 
 -- DROP TABLE EXERCISE_ATTEMPT;

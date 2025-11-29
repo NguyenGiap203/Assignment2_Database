@@ -10,13 +10,10 @@ CREATE TABLE TEST_ATTEMPT_RECORDS (
     
     StartTime           DATETIME        NOT NULL DEFAULT GETDATE(),
     SubmitTime          DATETIME,       -- NULL nếu chưa nộp
-    Score               DECIMAL(4, 2)   CHECK (Score >= 0), -- Điểm số
+    Score               DECIMAL(5, 2)   CHECK (Score >= 0 AND Score <= 100), -- Điểm số
     
     CONSTRAINT PK_TestAttempt PRIMARY KEY (TestAttemptID),
     
     -- Ràng buộc logic: Ngày nộp phải sau ngày bắt đầu
     CONSTRAINT CK_TestAttempt_Time CHECK (SubmitTime >= StartTime)
 );
-
-ALTER TABLE TEST_ATTEMPT_RECORDS
-ALTER COLUMN Score DECIMAL(5, 2);
