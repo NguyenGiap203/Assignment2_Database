@@ -64,13 +64,13 @@ public class UserTableController : ControllerBase
             if (maxId.Any())
             {
                 var numbers = maxId
-                    .Select(id => int.TryParse(id.Substring(2), out int num) ? num : 0)
+                    .Select(id => int.TryParse(id.Substring(2).Trim(), out int num) ? num : 0)
                     .Where(num => num > 0);
                 if (numbers.Any())
                     nextNumber = numbers.Max() + 1;
             }
 
-            user.UserID = $"US{nextNumber:D8}";
+            user.UserID = $"US{nextNumber:D3}";
         }
 
         _context.UserTable.Add(user);

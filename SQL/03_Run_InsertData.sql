@@ -1,3 +1,5 @@
+USE ElearningDB;
+GO
 -- 1. Chèn dữ liệu bảng USERTABLE (6 dòng)
 INSERT INTO USERTABLE (UserID, AccountName, AccountPassword, FullName, Email, PhoneNumber, Nation, Province, Ward, EnrollmentDate, AccountState) VALUES 
 ('US001', 'teacher_minh', 'hash123', N'Nguyễn Nhật Minh', 'minh.nguyen@edu.vn', '0909111222', N'Việt Nam', N'TP.HCM', N'Quận 1', '2023-01-01', 1),

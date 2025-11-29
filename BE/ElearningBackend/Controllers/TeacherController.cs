@@ -25,6 +25,7 @@ namespace ElearningBackend.Controllers
                 var teachers = await _context.Teachers
                     .Include(t => t.User)
                     .Include(t => t.Educations)
+                    .Include(t => t.Courses)
                     .ToListAsync();
 
                 return Ok(teachers);
