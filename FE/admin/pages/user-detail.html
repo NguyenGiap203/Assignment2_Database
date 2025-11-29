@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Thông tin Người dùng</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/navbar.css">
+</head>
+<body>
+  <div id="navbar"></div>
+
+  <div class="container">
+    <button onclick="history.back()" class="secondary">Return</button>
+    <h2>Thông tin người dùng</h2>
+
+    <div class="form-grid">
+      <div><label>ID</label><input id="ud_id" readonly></div>
+      <div><label>Username</label><input id="ud_username" readonly></div>
+      <div><label>Họ tên</label><input id="ud_fullname" readonly></div>
+      <div><label>Email</label><input id="ud_email" readonly></div>
+      <div><label>Điện thoại</label><input id="ud_phone" readonly></div>
+      <div><label>Vai trò</label><input id="ud_role" readonly></div>
+      <div><label>Trạng thái</label><input id="ud_status" readonly></div>
+      <div><label>Ngày tham gia</label><input id="ud_joined" readonly></div>
+    </div>
+
+    <hr style="margin:18px 0">
+
+    <div class="form-grid">
+      <div>
+        <label>Khoá học đã đăng ký</label>
+        <div><a id="ud_en_count" href="#">0</a></div>
+      </div>
+      <div>
+        <label>Đã đánh giá</label>
+        <div><a id="ud_rev_count" href="#">0</a></div>
+      </div>
+      <div>
+        <label>Bài luyện tập đã làm</label>
+        <div><a id="ud_ex_done_count" href="#">0</a></div>
+      </div>
+      <div>
+        <label>Bài kiểm tra đã làm</label>
+        <div><a id="ud_tests_count" href="#">0</a></div>
+      </div>
+      <div>
+        <label>Bài chia sẻ đã viết</label>
+        <div><a id="ud_posts_count" href="#">0</a></div>
+      </div>
+      <div>
+        <label>Bình luận</label>
+        <div><a id="ud_comments_count" href="#">0</a></div>
+      </div>
+
+      <!-- teacher-only (hidden if normal) -->
+      <div id="ud_teacher_block" style="display:none;">
+        <label>Bài luyện tập đã tạo</label>
+        <div><a id="ud_created_ex_count" href="#">0</a></div>
+      </div>
+      <div id="ud_teacher_block2" style="display:none;">
+        <label>Khoá học đã tạo</label>
+        <div><a id="ud_created_courses_count" href="#">0</a></div>
+      </div>
+    </div>
+
+    <div style="margin-top:18px;">
+      <button onclick="location.href='user-list.html'">Quay lại</button>
+    </div>
+  </div>
+
+  <script src="../js/db.js"></script>
+  <script src="../js/navbar.js"></script>
+  <script src="../js/user-detail.js"></script>
+</body>
+</html>

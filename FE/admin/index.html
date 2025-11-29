@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <title>Admin Login</title>
+  <link rel="stylesheet" href="./css/style.css">
+  <style>
+    .login-box { width:360px; margin:80px auto; padding:28px; background:#fff; border-radius:8px; box-shadow:0 4px 18px rgba(0,0,0,0.08); text-align:center; }
+    .login-box img.logo { width:64px; height:64px; object-fit:contain; margin-bottom:8px; }
+    .hint { font-size:13px; color:#666; margin-top:8px; }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <img class="logo" src="./assets/logo.png" alt="logo">
+    <h2>Admin Login</h2>
+    <input id="user" placeholder="Username">
+    <input id="pass" placeholder="Password" type="password">
+    <button onclick="login()">Đăng nhập</button>
+    <p id="msg" style="color:red"></p>
+    <p class="hint">Dùng tài khoản <code>sManager</code> / mật khẩu <code>sManager</code></p>
+  </div>
+
+  <script src="./js/auth.js"></script>
+</body>
+</html>
