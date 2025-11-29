@@ -27,7 +27,6 @@ const LoginPage: React.FC = () => {
     setError('');
     setLoading(true);
 
-    // Giả định sManager/123456 là tài khoản hợp lệ
     const success = await login(username, password);
 
     if (success) {

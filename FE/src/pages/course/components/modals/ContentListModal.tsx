@@ -95,7 +95,7 @@ const ContentListModal: React.FC<ContentListModalProps> = ({ isOpen, onClose, ty
     const titles = { theory: 'Lý thuyết', video: 'Video bài giảng', exercise: 'Bài tập', test: 'Bài kiểm tra' };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={`Chi tiết ${titles[type]} (${data.length})`}>
+        <Modal isOpen={isOpen} onClose={onClose} title={`Chi tiết ${titles[type]} (${data.length})`} maxWidth="3xl">
             <div className="max-h-[60vh] overflow-y-auto">
                 <Table 
                     data={sortedData} 
