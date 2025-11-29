@@ -1,3 +1,5 @@
+// src/pages/course/components/modals/ContentListModal.tsx
+
 import React, { useState, useMemo } from 'react';
 import Modal from '../../../../components/ui/Modal';
 import Table, { Column } from '../../../../components/ui/Table';
@@ -15,14 +17,21 @@ const ContentListModal: React.FC<ContentListModalProps> = ({ isOpen, onClose, ty
     // 1. Làm phẳng dữ liệu từ Chapters ra list items
     const data = useMemo(() => {
         if (!chapters) return [];
-        return chapters.flatMap(chap => {
+        
+        // FIX: Thêm định kiểu ': any[]' cho tham số callback để TypeScript không báo lỗi union type
+        return chapters.flatMap((chap): any[] => {
             const chapterName = `Chương ${chap.chapterOrder}`;
             switch (type) {
-                case 'video': return chap.videoLessons.map(v => ({ ...v, chapterName }));
-                case 'theory': return chap.theoryLessons.map(t => ({ ...t, chapterName }));
-                case 'exercise': return chap.exercises.map(e => ({ ...e, chapterName }));
-                case 'test': return chap.tests.map(t => ({ ...t, chapterName }));
-                default: return [];
+                case 'video': 
+                    return chap.videoLessons.map(v => ({ ...v, chapterName }));
+                case 'theory': 
+                    return chap.theoryLessons.map(t => ({ ...t, chapterName }));
+                case 'exercise': 
+                    return chap.exercises.map(e => ({ ...e, chapterName }));
+                case 'test': 
+                    return chap.tests.map(t => ({ ...t, chapterName }));
+                default: 
+                    return [];
             }
         });
     }, [chapters, type]);
@@ -31,13 +40,13 @@ const ContentListModal: React.FC<ContentListModalProps> = ({ isOpen, onClose, ty
     const getColumns = (): Column<any>[] => {
         const baseCols: Column<any>[] = [
             { key: 'chapterName', header: 'Thuộc Chương', sortable: true },
-            { key: 'title', header: 'Tiêu đề', sortable: true }, // Các bảng đều có title (hoặc testName)
+            { key: 'title', header: 'Tiêu đề', sortable: true }, // Các bảng đều có title (hoặc testName được map sang title nếu cần, ở đây giữ nguyên logic cũ)
         ];
 
         if (type === 'video') {
             baseCols.push(
                 { key: 'durationMinutes', header: 'Thời lượng (p)', sortable: true },
-                { key: 'videoURL', header: 'Link', render: (i) => <a href={i.videoURL} target="_blank" className="text-blue-600 hover:underline">Xem</a> }
+                { key: 'videoURL', header: 'Link', render: (i) => <a href={i.videoURL} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">Xem</a> }
             );
         } else if (type === 'test') {
             // Test dùng TestName thay vì Title
@@ -72,12 +81,14 @@ const ContentListModal: React.FC<ContentListModalProps> = ({ isOpen, onClose, ty
         return [...data].sort((a: any, b: any) => {
             const valA = a[sortKey];
             const valB = b[sortKey];
+            
+            // Xử lý sort số hoặc chuỗi an toàn
             if (typeof valA === 'number' && typeof valB === 'number') {
                 return sortDirection === 'asc' ? valA - valB : valB - valA;
             }
             return sortDirection === 'asc' 
-                ? String(valA).localeCompare(String(valB)) 
-                : String(valB).localeCompare(String(valA));
+                ? String(valA || '').localeCompare(String(valB || '')) 
+                : String(valB || '').localeCompare(String(valA || ''));
         });
     }, [data, sortKey, sortDirection]);
 

@@ -1,3 +1,4 @@
+// src/pages/course/components/GeneralInfo.tsx
 import React from 'react';
 
 interface GeneralInfoProps {
