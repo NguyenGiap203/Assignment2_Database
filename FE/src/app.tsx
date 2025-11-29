@@ -6,13 +6,14 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const UserList = lazy(() => import('./pages/user/UserList'));
 const UserDetail = lazy(() => import('./pages/user/UserDetail'));
-const CourseList = lazy(() => import('./pages/course/CourseList'));
-const CourseDetail = lazy(() => import( './pages/course/CourseDetail'));
+const CourseList = lazy(() => import('./pages/course/courseList'));
+const CourseDetail = lazy(() => import( './pages/course/courseDetail'));
 const ExerciseList = lazy(() => import( './pages/exercise/ExerciseList'));
 const PostList = lazy(() => import( './pages/post/PostList'));
 const RevenueReport = lazy(() => import( './pages/RevenueReport'));
-const LoginPage = lazy(() => import( './pages/LoginPage')); // <<< Import trang Login
-import { useAuth } from './hooks/useAuth'; // <<< Import hook Auth
+const LoginPage = lazy(() => import( './pages/LoginPage'));
+const Statistics = lazy(() => import('./pages/Statistics'));
+import { useAuth } from './hooks/useAuth';
 
 const LoadingFallback: React.FC = () => (
     <div className="flex justify-center items-center h-screen bg-gray-50">
@@ -61,6 +62,8 @@ const App: React.FC = () => {
           <Route path="/exercises" element={<ProtectedRoute><ExerciseList /></ProtectedRoute>} />
           <Route path="/posts" element={<ProtectedRoute><PostList /></ProtectedRoute>} />
 
+          <Route path="/statistics" element={<ProtectedRoute><Statistics /></ProtectedRoute>} />
+          
           <Route path="/reports" element={<ProtectedRoute><RevenueReport /></ProtectedRoute>} />
           {/* Route 404 */}
           <Route path="*" element={<div className="p-8 text-center text-red-500">404 - Không tìm thấy trang</div>} />
