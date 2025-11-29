@@ -33,7 +33,7 @@ const StatsListModal: React.FC<StatsListModalProps> = ({ isOpen, onClose, type, 
             title={titles[type] || 'Chi tiết'} 
             maxWidth="3xl" // Dùng size rộng như bạn yêu cầu
         >
-            <div className="max-h-[60vh] overflow-y-auto min-h-[300px]">
+            <div className="max-h-[60vh] overflow-y-auto p-1">
                 {type === 'student' && <StudentList courseId={courseId} />}
                 {type === 'rating' && <RatingList courseId={courseId} />}
                 {type === 'comment' && <CommentList courseId={courseId} />}

@@ -1,19 +1,18 @@
 // src/pages/course/CourseList.tsx
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { Eye, EyeOff, Trash2, PlusCircle, Search, Loader2 } from 'lucide-react';
+import { Eye, Trash2, PlusCircle, Search, Loader2, Filter } from 'lucide-react'; // Thêm icon Filter
 import { useNavigate } from 'react-router-dom';
 import Input from '../../components/ui/Input';
 import MainLayout from '../../components/layout/MainLayout';
 import Table, { Column } from '../../components/ui/Table';
 import Button from '../../components/ui/Button';
 import Pagination from '../../components/ui/Pagination';
-import Modal from '../../components/ui/Modal'; // Import Modal
-import CourseForm, { CreateCourseData } from '../../components/forms/CourseForm'; // Import Form vừa tạo
+import Modal from '../../components/ui/Modal';
+import CourseForm, { CreateCourseData } from '../../components/forms/CourseForm';
 import { useFetch } from '../../hooks/useFetch';
 import axiosClient from '../../api/axiosClient';
 
-// ... (Interface Course và CourseSortKey giữ nguyên như cũ)
 interface Course {
   courseID: string;
   courseName: string;
@@ -37,9 +36,11 @@ const CourseList: React.FC = () => {
   const [sortKey, setSortKey] = useState<CourseSortKey>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [searchTerm, setSearchTerm] = useState('');
-  const [refetchKey, setRefetchKey] = useState(0);
+  
+  // 1. STATE MỚI CHO FILTER
+  const [filterStatus, setFilterStatus] = useState<string>('All'); 
 
-  // --- STATE CHO MODAL TẠO MỚI ---
+  const [refetchKey, setRefetchKey] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -48,23 +49,41 @@ const CourseList: React.FC = () => {
     return `/Course?sortBy=${sortKey}&sortOrder=${sortDirection}`;
   }, [searchTerm, sortKey, sortDirection, refetchKey]);
 
-  const { data: courses, isLoading, error } = useFetch<Course[]>(fetchUrl);
+  const { data: courses, isLoading } = useFetch<Course[]>(fetchUrl);
 
+  // 2. CẬP NHẬT LOGIC LỌC DỮ LIỆU
   const { paginatedCourses, totalItems, totalPages } = useMemo(() => {
     const list = Array.isArray(courses) ? courses : [];
-    const safeList = list.filter(c => c && c.courseName); 
-    const totalItems = safeList.length;
-    const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
-    const start = (currentPage - 1) * itemsPerPage;
-    const paginatedCourses = safeList.slice(start, start + itemsPerPage);
-    return { paginatedCourses, totalItems, totalPages };
-  }, [courses, currentPage, itemsPerPage]);
+    
+    // Lọc danh sách an toàn và áp dụng Filter Status
+    const filteredList = list.filter(c => {
+        const isValid = c && c.courseName;
+        const matchesStatus = filterStatus === 'All' || c.courseState === filterStatus;
+        return isValid && matchesStatus;
+    });
 
-  // --- HÀM TẠO KHÓA HỌC (GỌI API) ---
+    const totalItems = filteredList.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+    
+    // Reset về trang 1 nếu trang hiện tại lớn hơn tổng số trang sau khi lọc
+    // (Logic này nên xử lý ở useEffect, nhưng để đơn giản ta tính toán start index an toàn)
+    const safePage = Math.min(currentPage, totalPages > 0 ? totalPages : 1);
+    const start = (safePage - 1) * itemsPerPage;
+    
+    const paginatedCourses = filteredList.slice(start, start + itemsPerPage);
+    
+    return { paginatedCourses, totalItems, totalPages };
+  }, [courses, currentPage, itemsPerPage, filterStatus]); // Thêm filterStatus vào dependency
+
+  // Hàm xử lý khi thay đổi Filter
+  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+      setFilterStatus(e.target.value);
+      setCurrentPage(1); // Reset về trang 1 khi đổi bộ lọc
+  };
+
   const handleCreateCourse = useCallback(async (formData: CreateCourseData) => {
     setIsSubmitting(true);
     try {
-        // Gọi API POST /api/Course
         await axiosClient.post('/Course', {
             CourseName: formData.courseName,
             CourseState: formData.courseState,
@@ -72,17 +91,15 @@ const CourseList: React.FC = () => {
         });
 
         alert('Tạo khóa học thành công!');
-        setIsModalOpen(false); // Đóng modal
-        setRefetchKey(prev => prev + 1); // Refresh lại danh sách
+        setIsModalOpen(false);
+        setRefetchKey(prev => prev + 1);
     } catch (err: any) {
-        // Hiển thị lỗi từ backend (ví dụ: Teacher not found)
         alert(`Lỗi tạo khóa học: ${err.response?.data?.message || err.message}`);
     } finally {
         setIsSubmitting(false);
     }
   }, []);
 
-  // --- Hàm xóa khóa học (như cũ) ---
   const handleDelete = useCallback(async (courseID: string) => {
       if (window.confirm("Bạn có chắc chắn muốn xóa khóa học này?")) {
           try {
@@ -143,16 +160,43 @@ const CourseList: React.FC = () => {
   return (
     <MainLayout>
       <h2 className="text-3xl font-bold text-gray-800 mb-6">Quản lý Khóa học</h2>
-      <div className="flex justify-between items-center mb-6 p-4 bg-white rounded-lg shadow-sm">
-        <div className="w-1/3">
-          <Input type="text" placeholder="Tìm kiếm khóa học..." icon={<Search className="w-5 h-5" />}
-            value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+      
+      {/* 3. CẬP NHẬT GIAO DIỆN THANH CÔNG CỤ */}
+      <div className="flex flex-col md:flex-row justify-between items-center mb-6 p-4 bg-white rounded-lg shadow-sm gap-4"> 
+        
+        {/* Ô Tìm kiếm */}
+        <div className="w-full md:w-1/3 -mb-4">
+          <Input 
+            type="text" 
+            placeholder="Tìm kiếm khóa học..." 
+            icon={<Search className="w-5 h-5" />}
+            value={searchTerm} 
+            onChange={(e) => setSearchTerm(e.target.value)} 
+            className="mb-0" // Ghi đè margin-bottom mặc định của Input
+          />
+        </div>
+        
+        {/* Dropdown Filter */}
+        <div className="flex space-x-2 min-w-[200px]">
+            <Filter className="w-5 h-5 text-gray-500" />
+            <select
+                value={filterStatus}
+                onChange={handleFilterChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-700"
+            >
+                <option value="All">Tất cả trạng thái</option>
+                <option value="Đang mở">Đang mở</option>
+                <option value="Sắp ra mắt">Sắp ra mắt</option>
+                <option value="Đã đóng">Đã đóng</option>
+            </select>
         </div>
         
         {/* Nút mở Modal */}
-        <Button variant="primary" onClick={() => setIsModalOpen(true)}> 
+        <div className="flex items-center space-x-2 min-w-[200px]">
+          <Button variant="primary" onClick={() => setIsModalOpen(true)}> 
             <PlusCircle className="w-5 h-5 mr-2" /> Thêm Khóa học 
-        </Button>
+          </Button>
+        </div>
       </div>
 
       {isLoading && <div className="p-12 text-center text-blue-600"><Loader2 className="w-8 h-8 animate-spin mx-auto mb-2"/>Đang tải...</div>}
@@ -169,7 +213,6 @@ const CourseList: React.FC = () => {
         </>
       )}
 
-      {/* --- MODAL TẠO KHÓA HỌC --- */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

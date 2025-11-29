@@ -49,11 +49,11 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
         <div className="flex items-center space-x-2 cursor-pointer group">
           <img
             className="w-8 h-8 rounded-full object-cover"
-            src="https://via.placeholder.com/150" 
+            src="https://tse1.mm.bing.net/th/id/OIP._prlVvISXU3EfqFW3GF-RwHaHa?rs=1&pid=ImgDetMain&o=7&rm=3" 
             alt="Admin Avatar"
           />
           <span className="text-sm font-medium text-gray-700 hidden sm:block">
-            Admin Name
+            {user?.name}
           </span>
         </div>
 
