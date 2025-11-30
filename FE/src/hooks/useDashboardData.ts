@@ -44,7 +44,7 @@ export const useDashboardData = () => {
                 ]);
 
                 setData({
-                    totalStudents: usersRes.data.length,
+                    totalStudents: usersRes.data.length - teachersRes.data.length, // Tổng user - Tổng teacher = Số học viên
                     totalTeachers: teachersRes.data.length,
                     totalCourses: coursesRes.data.length,
                     totalPosts: postsRes.data.length,

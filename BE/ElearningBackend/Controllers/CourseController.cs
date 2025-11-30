@@ -189,66 +189,96 @@ namespace ElearningBackend.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
+            using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 var course = await _context.Courses.FindAsync(id);
                 if (course == null)
                     return NotFound(new { message = "Course not found" });
 
-                // Xóa cascade: Xóa tất cả data liên quan trước
-                // 1. Xóa Chapters và content của chapters
-                var chapters = await _context.Chapters.Where(c => c.CourseID == id).ToListAsync();
-                foreach (var chapter in chapters)
-                {
-                    // Xóa VideoLessons
-                    var videos = await _context.VideoLessons.Where(v => v.ChapterID == chapter.ChapterID).ToListAsync();
-                    _context.VideoLessons.RemoveRange(videos);
+                // Xóa cascade bằng Raw SQL theo thứ tự đúng
 
-                    // Xóa TheoryLessons
-                    var theories = await _context.TheoryLessons.Where(t => t.ChapterID == chapter.ChapterID).ToListAsync();
-                    _context.TheoryLessons.RemoveRange(theories);
+                // 1. Xóa Test Attempts (phải xóa trước Test)
+                await _context.Database.ExecuteSqlRawAsync(
+                    @"DELETE FROM TEST_ATTEMPT_RECORDS 
+                      WHERE TestID IN (
+                          SELECT t.TestID FROM TEST t 
+                          INNER JOIN CHAPTER c ON t.ChapterID = c.ChapterID 
+                          WHERE c.CourseID = {0}
+                      )", id);
 
-                    // Xóa Exercises
-                    var exercises = await _context.Exercises.Where(e => e.ChapterID == chapter.ChapterID).ToListAsync();
-                    _context.Exercises.RemoveRange(exercises);
+                // 2. Xóa Exercise Attempts (phải xóa trước Exercise)
+                await _context.Database.ExecuteSqlRawAsync(
+                    @"DELETE FROM EXERCISE_ATTEMPT 
+                      WHERE ExerciseID IN (
+                          SELECT e.ExerciseID FROM EXERCISE e 
+                          INNER JOIN CHAPTER c ON e.ChapterID = c.ChapterID 
+                          WHERE c.CourseID = {0}
+                      )", id);
 
-                    // Xóa Tests (và Questions, Answers của Tests)
-                    var tests = await _context.Tests.Where(t => t.ChapterID == chapter.ChapterID).ToListAsync();
-                    foreach (var test in tests)
-                    {
-                        // Xóa Answers trước
-                        var answers = await _context.Answers.Where(a => a.TestID == test.TestID).ToListAsync();
-                        _context.Answers.RemoveRange(answers);
+                // 3. Xóa Answers (phải xóa trước Questions)
+                await _context.Database.ExecuteSqlRawAsync(
+                    @"DELETE FROM ANSWER 
+                      WHERE TestID IN (
+                          SELECT t.TestID FROM TEST t 
+                          INNER JOIN CHAPTER c ON t.ChapterID = c.ChapterID 
+                          WHERE c.CourseID = {0}
+                      )", id);
 
-                        // Xóa Questions
-                        var questions = await _context.Questions.Where(q => q.TestID == test.TestID).ToListAsync();
-                        _context.Questions.RemoveRange(questions);
-                    }
-                    _context.Tests.RemoveRange(tests);
-                }
-                _context.Chapters.RemoveRange(chapters);
+                // 4. Xóa Questions (phải xóa trước Test)
+                await _context.Database.ExecuteSqlRawAsync(
+                    @"DELETE FROM QUESTION 
+                      WHERE TestID IN (
+                          SELECT t.TestID FROM TEST t 
+                          INNER JOIN CHAPTER c ON t.ChapterID = c.ChapterID 
+                          WHERE c.CourseID = {0}
+                      )", id);
 
-                // 2. Xóa Enrollments
-                var enrollments = await _context.CourseEnrollments.Where(e => e.CourseID == id).ToListAsync();
-                _context.CourseEnrollments.RemoveRange(enrollments);
+                // 5. Xóa Tests
+                await _context.Database.ExecuteSqlRawAsync(
+                    @"DELETE FROM TEST 
+                      WHERE ChapterID IN (SELECT ChapterID FROM CHAPTER WHERE CourseID = {0})", id);
 
-                // 3. Xóa Ratings
-                var ratings = await _context.CourseRatings.Where(r => r.CourseID == id).ToListAsync();
-                _context.CourseRatings.RemoveRange(ratings);
+                // 6. Xóa Exercises
+                await _context.Database.ExecuteSqlRawAsync(
+                    @"DELETE FROM EXERCISE 
+                      WHERE ChapterID IN (SELECT ChapterID FROM CHAPTER WHERE CourseID = {0})", id);
 
-                // 4. Xóa Comments về Course
-                var comments = await _context.Comments.Where(c => c.CourseID == id).ToListAsync();
-                _context.Comments.RemoveRange(comments);
+                // 7. Xóa Theory Lessons
+                await _context.Database.ExecuteSqlRawAsync(
+                    @"DELETE FROM THEORY_LESSON 
+                      WHERE ChapterID IN (SELECT ChapterID FROM CHAPTER WHERE CourseID = {0})", id);
 
-                // 5. Cuối cùng xóa Course
-                _context.Courses.Remove(course);
-                await _context.SaveChangesAsync();
+                // 8. Xóa Video Lessons
+                await _context.Database.ExecuteSqlRawAsync(
+                    @"DELETE FROM VIDEO_LESSON 
+                      WHERE ChapterID IN (SELECT ChapterID FROM CHAPTER WHERE CourseID = {0})", id);
 
+                // 9. Xóa Chapters
+                await _context.Database.ExecuteSqlRawAsync("DELETE FROM CHAPTER WHERE CourseID = {0}", id);
+
+                // 10. Xóa Comments về Course (reply comments trước)
+                await _context.Database.ExecuteSqlRawAsync(
+                    "DELETE FROM COMMENTS WHERE CourseID = {0} AND ReplyUserID IS NOT NULL", id);
+                await _context.Database.ExecuteSqlRawAsync(
+                    "DELETE FROM COMMENTS WHERE CourseID = {0}", id);
+
+                // 11. Xóa Enrollments
+                await _context.Database.ExecuteSqlRawAsync("DELETE FROM COURSE_ENROLLMENT WHERE CourseID = {0}", id);
+
+                // 12. Xóa Ratings
+                await _context.Database.ExecuteSqlRawAsync("DELETE FROM COURSE_RATING WHERE CourseID = {0}", id);
+
+                // 13. Cuối cùng xóa Course
+                await _context.Database.ExecuteSqlRawAsync("DELETE FROM COURSE WHERE CourseID = {0}", id);
+
+                await transaction.CommitAsync();
                 return Ok(new { message = "Course and all related data deleted successfully" });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Error deleting course", error = ex.Message });
+                await transaction.RollbackAsync();
+                return StatusCode(500, new { message = "Error deleting course", error = ex.Message, stackTrace = ex.StackTrace });
             }
         }
 
