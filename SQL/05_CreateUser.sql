@@ -4,10 +4,6 @@
 USE ElearningDB;
 GO
 
-SET QUOTED_IDENTIFIER ON;
-SET ANSI_NULLS ON;
-GO
-
 -- Kiểm tra và xóa user nếu đã tồn tại
 IF EXISTS (SELECT 1 FROM sys.database_principals WHERE name = 'sManager')
 BEGIN
@@ -41,7 +37,7 @@ ALTER ROLE db_owner ADD MEMBER sManager;
 GO
 
 PRINT N'========================================';
-PRINT N'✅ Đã tạo user sManager thành công!';
+PRINT N'Da tao user sManager thanh cong!';
 PRINT N'Login: sManager';
 PRINT N'Password: sManager123!';
 PRINT N'Role: db_owner (Full access)';

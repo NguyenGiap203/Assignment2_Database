@@ -5,7 +5,18 @@ Create database and build an application for online learning course web.
 
 Để khởi tạo CSDL thành công, vui lòng thực hiện theo các bước sau:
 
-## Tạo Database Từ Đầu
+## Cách 1: Chạy File Tổng Hợp (Khuyến nghị)
+
+### Chạy 1 lần duy nhất
+Thực thi file: `RunAll.sql`
+- **Mục đích:** Tự động tạo database, tạo tables, foreign keys, insert data, tạo functions/procedures/triggers, và tạo user.
+- **Nội dung:** Tổng hợp tất cả 5 file SQL (01 → 05) vào 1 file duy nhất.
+- **Lợi ích:** Đơn giản, nhanh chóng, không cần chạy từng file riêng lẻ.
+- **Lưu ý:** File này sẽ tự động DROP database cũ (nếu có) và tạo lại từ đầu.
+
+---
+
+## Cách 2: Chạy Từng File Riêng Lẻ
 
 ### Bước 1: Tạo Database rỗng
 Mở SQL Server Management Studio và chạy lệnh:
