@@ -24,50 +24,68 @@ và trải nghiệm người dùng tốt nhất:
 
 Mã nguồn được tổ chức theo hướng moduel hóa để dễ dàng mở rộng:
 
-    /src
-    ├── /api                # 🌐 Kết nối và Xử lý Backend (Axios/Fetch)
-    │   ├── courseApi.ts    # - Xử lý API liên quan đến Khóa học
-    │   ├── userApi.ts      # - Xử lý API liên quan đến Người dùng
-    │   └── axiosClient.ts  # - Cấu hình chung cho Axios (interceptors, base URL)
-    |
-    ├── /assets             # 🖼️ Hình ảnh, Fonts, Styles Global
-    │   ├── /images         # - Logo, icon tĩnh
-    │   └── /styles         # - Global CSS/SCSS (ví dụ: base reset, font-face)
-    |
-    ├── /components         # 🧱 Các Component Tái Sử Dụng
-    │   ├── /layout         # - Các thành phần giao diện lớn, cố định
-    │   │   ├── Header.tsx  # - Thanh điều hướng trên cùng
-    │   │   ├── Sidebar.tsx # - Thanh điều hướng bên (Menu chính)
-    │   │   └── MainLayout.tsx # - Component chứa Header/Sidebar/Content
-    │   └── /ui             # - Các thành phần giao diện nhỏ, cơ bản
-    │       ├── Button.tsx  # - Nút bấm
-    │       ├── Table.tsx   # - Bảng dữ liệu
-    │       ├── Modal.tsx   # - Hộp thoại bật lên
-    │       ├── Input.tsx   # - Trường nhập liệu
-    │       └── Pagination.tsx # - Phân trang cho dữ liệu
-    |
-    ├── /hooks              # 🎣 Custom React Hooks (Tái sử dụng Logic)
-    │   ├── useAuth.ts      # - Quản lý trạng thái đăng nhập/Token
-    │   ├── useFetch.ts     # - Hook gọi API chung
-    │   └── usePagination.ts # - Logic phân trang
-    |
-    ├── /pages              # 🖥️ Các Trang Giao Diện Chính (Views)
-    │   ├── /Course         # - Quản lý Khóa học
-    │   │   ├── CourseList.tsx 
-    │   │   └── CourseDetail.tsx
-    │   ├── /User           # - Quản lý Người dùng
-    │   │   └── UserList.tsx
-    │   ├── /Post           # - Quản lý Bài chia sẻ/Diễn đàn
-    │   │   └── PostList.tsx
-    │   ├── /Exercise       # - Quản lý Bài tập bắt buộc
+    src/
+    ├── api/                        # Cấu hình gọi API
+    │   └── axiosClient.ts          # Cấu hình Axios instance, Interceptors (Token)
+    ├── components/                 # Các thành phần giao diện tái sử dụng
+    │   ├── forms/                  # Các form nhập liệu phức tạp
+    │   │   ├── CourseForm.tsx
+    │   │   └── UserForm.tsx
+    │   ├── layout/                 # Bố cục trang web
+    │   │   ├── DetailSection.tsx
+    │   │   ├── Header.tsx
+    │   │   ├── MainLayout.tsx
+    │   │   └── Sidebar.tsx
+    │   └── ui/                     # Các UI component cơ bản (Atomic)
+    │       ├── Button.tsx
+    │       ├── Input.tsx
+    │       ├── Modal.tsx
+    │       ├── Pagination.tsx
+    │       ├── StatCardDetailed.tsx
+    │       └── Table.tsx
+    ├── context/                    # Quản lý Global State
+    │   └── AuthContext.tsx         # Context quản lý đăng nhập/xác thực
+    ├── data/                       # Dữ liệu mẫu (Mock data - nếu còn dùng)
+    │   ├── course.json
+    │   ├── exercise.json
+    │   ├── exerciseAttemp.json
+    │   └── user.json
+    ├── hooks/                      # Custom Hooks
+    │   ├── useAuth.ts
+    │   ├── useDashboardData.ts     # Logic lấy số liệu tổng quan
+    │   ├── useFetch.ts             # Hook gọi API chung
+    │   └── usePagination.ts
+    ├── pages/                      # Các trang màn hình chính
+    │   ├── course/                 # Module Quản lý khóa học
+    │   │   ├── components/         # Component riêng cho trang khóa học
+    │   │   │   ├── modals/         # Các modal chi tiết (List, Rating, Stats...)
+    │   │   │   ├── ChapterList.tsx
+    │   │   │   ├── ContentOverview.tsx
+    │   │   │   ├── GeneralInfo.tsx
+    │   │   │   └── StatsOverview.tsx
+    │   │   ├── courseDetail.tsx
+    │   │   └── courseList.tsx
+    │   ├── exercise/               # Module Bài tập
+    │   │   ├── ExerciseDetail.tsx
     │   │   └── ExerciseList.tsx
-    │   └── Dashboard.tsx   # - Trang tổng quan
-    |
-    ├── /utils              # ⚙️ Các Hàm Tiện Ích & Helper Functions
-    │   ├── format.ts       # - Format date, currency, number
-    │   └── validation.ts   # - Hàm kiểm tra dữ liệu đầu vào (email, password)
-    |
-    └── App.tsx             # 🚀 Component gốc & Routing (React Router v6)
+    │   ├── post/                   # Module Bài viết/Thảo luận
+    │   │   ├── PostDetail.tsx
+    │   │   └── PostList.tsx
+    │   ├── user/                   # Module Quản lý người dùng
+    │   │   ├── UserDetail.tsx
+    │   │   └── UserList.tsx
+    │   ├── Dashboard.tsx           # Trang tổng quan (Trang chủ)
+    │   ├── LoginPage.tsx           # Trang đăng nhập
+    │   ├── RevenueReport.tsx       # Trang báo cáo doanh thu
+    │   └── Statistics.tsx          # Trang thống kê hệ thống
+    ├── types/                      # Định nghĩa kiểu dữ liệu (TypeScript Interfaces)
+    │   └── course.ts
+    ├── utils/                      # Các hàm tiện ích bổ trợ
+    │   ├── format.ts               # Định dạng ngày tháng, tiền tệ
+    │   └── validation.ts           # Kiểm tra dữ liệu (Email, Password...)
+    ├── app.tsx                     # Routing & Cấu hình App chính
+    ├── main.tsx                    # Entry point của ứng dụng
+    └── index.css                   # Global styles (Tailwind directives)
 
 ------------------------------------------------------------------------
 
