@@ -105,6 +105,7 @@ public class UserTableController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id)
     {
+        using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
             var user = await _context.UserTable.FindAsync(id);
@@ -121,43 +122,58 @@ public class UserTableController : ControllerBase
                     return BadRequest(new { message = "Cannot delete teacher who has courses. Delete courses first." });
                 }
 
+                // Xóa Teacher Education records trước
+                await _context.Database.ExecuteSqlRawAsync("DELETE FROM TEACHER_EDUCATION WHERE TeacherID = {0}", id);
+
+                // Xóa Practice Attempts của practices của teacher này
+                await _context.Database.ExecuteSqlRawAsync(
+                    "DELETE FROM PRACTICE_ATTEMPT_INFO WHERE PracticeID IN (SELECT PracticeID FROM PRACTICES WHERE TeacherID = {0})", id);
+
+                // Xóa Practices của teacher
+                await _context.Database.ExecuteSqlRawAsync("DELETE FROM PRACTICES WHERE TeacherID = {0}", id);
+
                 // Xóa Teacher record
-                var teacher = await _context.Teachers.FindAsync(id);
-                if (teacher != null)
-                    _context.Teachers.Remove(teacher);
+                await _context.Database.ExecuteSqlRawAsync("DELETE FROM TEACHER WHERE TeacherID = {0}", id);
             }
 
-            // Xóa các data liên quan của User
-            // 1. Posts của user
-            var posts = await _context.Posts.Where(p => p.UserID == id).ToListAsync();
-            foreach (var post in posts)
-            {
-                var postComments = await _context.Comments.Where(c => c.PostID == post.PostID).ToListAsync();
-                _context.Comments.RemoveRange(postComments);
-            }
-            _context.Posts.RemoveRange(posts);
+            // Xóa các data liên quan của User bằng raw SQL
+            // 1. Test Attempts
+            await _context.Database.ExecuteSqlRawAsync("DELETE FROM TEST_ATTEMPT_RECORDS WHERE UserID = {0}", id);
 
-            // 2. Comments của user
-            var userComments = await _context.Comments.Where(c => c.UserID == id).ToListAsync();
-            _context.Comments.RemoveRange(userComments);
+            // 2. Practice Attempts
+            await _context.Database.ExecuteSqlRawAsync("DELETE FROM PRACTICE_ATTEMPT_INFO WHERE UserID = {0}", id);
 
-            // 3. Enrollments
-            var enrollments = await _context.CourseEnrollments.Where(e => e.UserID == id).ToListAsync();
-            _context.CourseEnrollments.RemoveRange(enrollments);
+            // 3. Exercise Attempts
+            await _context.Database.ExecuteSqlRawAsync("DELETE FROM EXERCISE_ATTEMPT WHERE UserID = {0}", id);
 
-            // 4. Ratings
-            var ratings = await _context.CourseRatings.Where(r => r.UserID == id).ToListAsync();
-            _context.CourseRatings.RemoveRange(ratings);
+            // 4. Comments - xóa tất cả comments liên quan (bao gồm cả self-reference)
+            // Xóa comments trong posts của user
+            await _context.Database.ExecuteSqlRawAsync(
+                "DELETE FROM COMMENTS WHERE PostID IN (SELECT PostID FROM POSTS WHERE UserID = {0})", id);
 
-            // 5. Cuối cùng xóa User
-            _context.UserTable.Remove(user);
-            await _context.SaveChangesAsync();
+            // Xóa comments của user hoặc reply đến user
+            await _context.Database.ExecuteSqlRawAsync(
+                "DELETE FROM COMMENTS WHERE UserID = {0} OR ReplyUserID = {0}", id);
 
+            // 5. Posts
+            await _context.Database.ExecuteSqlRawAsync("DELETE FROM POSTS WHERE UserID = {0}", id);
+
+            // 6. Enrollments
+            await _context.Database.ExecuteSqlRawAsync("DELETE FROM COURSE_ENROLLMENT WHERE UserID = {0}", id);
+
+            // 7. Ratings
+            await _context.Database.ExecuteSqlRawAsync("DELETE FROM COURSE_RATING WHERE UserID = {0}", id);
+
+            // 8. Cuối cùng xóa User
+            await _context.Database.ExecuteSqlRawAsync("DELETE FROM USERTABLE WHERE UserID = {0}", id);
+
+            await transaction.CommitAsync();
             return Ok(new { message = "User and all related data deleted successfully" });
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "Error deleting user", error = ex.Message });
+            await transaction.RollbackAsync();
+            return StatusCode(500, new { message = "Error deleting user", error = ex.Message, stackTrace = ex.StackTrace });
         }
     }
 }

@@ -4,9 +4,7 @@
 USE ElearningDB;
 GO
 
--- ============================================
 -- FUNCTIONS
--- ============================================
 
 -- Function 1: Tính điểm trung bình của học viên
 CREATE FUNCTION fn_CalculateStudentAvgScore (@UserID CHAR(10))
@@ -41,12 +39,10 @@ RETURN
 );
 GO
 
-PRINT N'✅ Đã tạo 2 Functions';
+PRINT N'Da tao 2 Functions';
 GO
 
--- ============================================
 -- STORED PROCEDURES
--- ============================================
 
 -- Procedure 1: Lấy danh sách top học viên
 CREATE PROCEDURE sp_GetTopStudents
@@ -103,12 +99,10 @@ BEGIN
 END;
 GO
 
-PRINT N'✅ Đã tạo 2 Stored Procedures';
+PRINT N'Da tao 2 Stored Procedures';
 GO
 
--- ============================================
 -- TRIGGERS
--- ============================================
 
 -- Trigger 1: Tự động cập nhật NumStudents khi có enrollment
 CREATE TRIGGER trg_UpdateNumStudents
@@ -157,7 +151,7 @@ BEGIN
 END;
 GO
 
-PRINT N'✅ Đã tạo 2 Triggers';
+PRINT N'Da tao 2 Triggers';
 GO
 
 -- Kiểm tra kết quả
