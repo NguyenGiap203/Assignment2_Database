@@ -39,8 +39,8 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon, label, isSidebarOpen }) => 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
   const navItems = [
     { to: '/dashboard', icon: <LayoutDashboard className="w-5 h-5" />, label: 'Dashboard' },
-    { to: '/users', icon: <Users className="w-5 h-5" />, label: 'Quản lý Người dùng' },
-    { to: '/courses', icon: <BookOpen className="w-5 h-5" />, label: 'Quản lý Khóa học' },
+    { to: '/users', icon: <Users className="w-5 h-5" />, label: 'Quản lý người dùng' },
+    { to: '/courses', icon: <BookOpen className="w-5 h-5" />, label: 'Quản lý khóa học' },
     //{ to: '/exercises', icon: <ListChecks className="w-5 h-5" />, label: 'Bài tập bắt buộc' },
     //{ to: '/posts', icon: <MessageSquare className="w-5 h-5" />, label: 'Bài chia sẻ' },
     { to: '/statistics', icon: <PieChart className="w-5 h-5" />, label: 'Thống kê' },

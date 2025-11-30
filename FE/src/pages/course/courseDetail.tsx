@@ -78,7 +78,7 @@ const CourseDetail: React.FC = () => {
     return (
         <MainLayout>
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-extrabold text-gray-900 w-2/3">{course.courseName}</h1>
+                <h1 className="text-3xl font-bold text-gray-900 w-2/3">{course.courseName}</h1>
                 <Button variant="secondary" onClick={() => window.history.back()}>
                     <ArrowLeft className="w-5 h-5 mr-2" /> Quay lại
                 </Button>
