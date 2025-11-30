@@ -45,8 +45,8 @@ const CourseList: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchUrl = useMemo(() => {
-    if (searchTerm) return `/Course/search?keyword=${searchTerm}`;
-    return `/Course?sortBy=${sortKey}&sortOrder=${sortDirection}`;
+    if (searchTerm) return `/Course/search?keyword=${searchTerm}&refetch=${refetchKey}`;
+    return `/Course?sortBy=${sortKey}&sortOrder=${sortDirection}&refetch=${refetchKey}`;
   }, [searchTerm, sortKey, sortDirection, refetchKey]);
 
   const { data: courses, isLoading } = useFetch<Course[]>(fetchUrl);
