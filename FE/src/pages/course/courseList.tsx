@@ -159,7 +159,7 @@ const CourseList: React.FC = () => {
 
   return (
     <MainLayout>
-      <h2 className="text-3xl font-bold text-gray-800 mb-6">Quản lý Khóa học</h2>
+      <h2 className="text-3xl font-bold text-gray-800 mb-6">Quản lý khóa học</h2>
       
       {/* 3. CẬP NHẬT GIAO DIỆN THANH CÔNG CỤ */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-6 p-4 bg-white rounded-lg shadow-sm gap-4"> 

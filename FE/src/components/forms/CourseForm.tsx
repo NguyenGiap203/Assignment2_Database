@@ -75,7 +75,7 @@ const CourseForm: React.FC<CourseFormProps> = ({ isSubmitting, onSubmit, onCance
         value={formData.teacherID}
         onChange={handleChange}
         error={errors.teacherID}
-        placeholder="Ví dụ: USR002"
+        placeholder="Ví dụ: US001"
         required
       />
       {/* Ghi chú: Trong thực tế, nên dùng Dropdown/Select để chọn GV từ danh sách có sẵn */}

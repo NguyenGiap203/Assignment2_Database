@@ -46,6 +46,10 @@ const UserList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [refetchKey, setRefetchKey] = useState(0); 
 
+  const { data: teachers } = useFetch<any[]>('/Teacher');
+  const teacherIds = useMemo(() => {
+    return new Set(teachers?.map((t: any) => t.teacherID) || []);
+  }, [teachers]);
   // URL Fetch Data
   const fetchUrl = useMemo(() => {
       const beSortKey = (key: UserSortKey) => {
@@ -141,7 +145,20 @@ const UserList: React.FC = () => {
     { key: 'accountName', header: 'Tên TK', sortable: true }, 
     { key: 'fullName', header: 'Họ Tên', sortable: true },
     { key: 'email', header: 'Email', sortable: true },
-    { key: 'role', header: 'Vai trò', sortable: false },
+    { key: 'role', header: 'Vai trò', sortable: false,
+      render: (user) => {
+        // Logic 1: Nếu là tài khoản sManager -> Admin
+        if (user.accountName === 'sManager') {
+          return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">Admin</span>;
+        }
+        // Logic 2: Nếu ID có trong danh sách Teacher -> Teacher
+        if (teacherIds.has(user.userID)) {
+          return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Giảng viên</span>;
+        }
+        // Logic 3: Còn lại -> Học viên
+        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Học viên</span>;
+      }
+    },
     { 
       key: 'accountState', 
       header: 'Trạng thái',
@@ -190,7 +207,7 @@ const UserList: React.FC = () => {
 
   return (
     <MainLayout>
-      <h2 className="text-3xl font-bold text-gray-800 mb-6">Quản lý Người dùng</h2>
+      <h2 className="text-3xl font-bold text-gray-800 mb-6">Quản lý người dùng</h2>
       
       <div className="flex justify-between items-center mb-6 p-4 bg-white rounded-lg shadow-sm border border-gray-100">
         <div className="w-1/3 relative">

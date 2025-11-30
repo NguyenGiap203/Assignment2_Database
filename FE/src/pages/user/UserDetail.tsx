@@ -97,7 +97,7 @@ const UserDetail: React.FC = () => {
   return (
     <MainLayout>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Chi tiết Người dùng: {initialUser.userID}</h1>
+        <h1 className="text-3xl font-bold text-gray-800">Chi tiết người dùng: {initialUser.userID}</h1>
         <Button variant="secondary" onClick={() => window.history.back()}>
           <ArrowLeft className="w-5 h-5 mr-2" />
           Quay lại danh sách
